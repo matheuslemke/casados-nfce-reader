@@ -126,6 +126,12 @@ function InvoiceManager() {
     return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
   });
 
+  const sortedInvoices = [...filteredInvoices].sort((a: any, b: any) => {
+    const at = typeof a.emission_ts === 'number' ? a.emission_ts : Number.POSITIVE_INFINITY;
+    const bt = typeof b.emission_ts === 'number' ? b.emission_ts : Number.POSITIVE_INFINITY;
+    return at - bt;
+  });
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-sm p-6">
@@ -155,7 +161,7 @@ function InvoiceManager() {
 
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
-          <h2 className="text-2xl font-bold">Invoices ({invoices.length})</h2>
+          <h2 className="text-2xl font-bold">Invoices ({sortedInvoices.length})</h2>
           <div className="flex flex-wrap items-center gap-2">
             <label className="text-sm text-gray-600">Month</label>
             <select
@@ -193,10 +199,10 @@ function InvoiceManager() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-2 max-h-[600px] overflow-y-auto">
-            {filteredInvoices.length === 0 ? (
+            {sortedInvoices.length === 0 ? (
               <p className="text-gray-500 text-center py-8">No invoices yet. Add one above!</p>
             ) : (
-              filteredInvoices.map((invoice) => (
+              sortedInvoices.map((invoice) => (
                 <div
                   key={invoice._id}
                   className={`p-4 border rounded-lg cursor-pointer transition-colors ${
@@ -206,20 +212,27 @@ function InvoiceManager() {
                   }`}
                   onClick={() => setSelectedInvoice(invoice._id)}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full ${
-                        invoice.status === "done"
-                          ? "bg-green-100 text-green-800"
-                          : invoice.status === "error"
-                          ? "bg-red-100 text-red-800"
-                          : invoice.status === "processing"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {invoice.status}
-                    </span>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-gray-700">
+                        {typeof invoice.emission_ts === 'number'
+                          ? new Date(invoice.emission_ts).toLocaleDateString('pt-BR')
+                          : 'Sem data'}
+                      </span>
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          invoice.status === "done"
+                            ? "bg-green-100 text-green-800"
+                            : invoice.status === "error"
+                            ? "bg-red-100 text-red-800"
+                            : invoice.status === "processing"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {invoice.status}
+                      </span>
+                    </div>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -230,10 +243,13 @@ function InvoiceManager() {
                       Delete
                     </button>
                   </div>
-                  <p className="text-sm text-gray-600 truncate">{invoice.url}</p>
-                  {invoice.last_run && (
-                    <p className="text-xs text-gray-400 mt-1">
-                      Last run: {new Date(invoice.last_run).toLocaleString()}
+                  {(invoice.total_amount_str || invoice.total_amount !== undefined) && (
+                    <p className="text-sm text-gray-700">
+                      <span className="font-medium">Total:</span>{" "}
+                      {invoice.total_amount_str ??
+                        new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+                          invoice.total_amount || 0
+                        )}
                     </p>
                   )}
                 </div>
