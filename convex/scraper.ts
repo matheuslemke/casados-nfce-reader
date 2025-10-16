@@ -58,6 +58,50 @@ export const scrapeOne = internalAction({
       });
 
       const $ = cheerio.load(response.data);
+
+      // Helper to parse Brazilian datetime strings like "02/10/2025 20:42:38"
+      const parseBrDateTime = (s: string): number | null => {
+        const m = s
+          .replace(/\u00A0/g, " ") // non-breaking space to normal space
+          .trim()
+          .match(/(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+        if (!m) return null;
+        const dd = parseInt(m[1], 10);
+        const MM = parseInt(m[2], 10);
+        const yyyy = parseInt(m[3], 10);
+        const hh = m[4] ? parseInt(m[4], 10) : 0;
+        const mm = m[5] ? parseInt(m[5], 10) : 0;
+        const ss = m[6] ? parseInt(m[6], 10) : 0;
+        const date = new Date(yyyy, MM - 1, dd, hh, mm, ss);
+        return isNaN(date.getTime()) ? null : date.getTime();
+      };
+
+      // Try to locate the Emissão value near its label; fallback to page text scan
+      let emissionStr: string | null = null;
+      let emissionTs: number | null = null;
+      // Look for elements containing the label 'Emissão'
+      const labelCandidates = $("body :contains('Emissão'), body :contains('Emissao')");
+      labelCandidates.each((_, el) => {
+        const txt = $(el).text();
+        const m = txt.match(/Emiss[ãa]o\s*:?\s*(.*)/i);
+        if (m && m[1]) {
+          const candidate = m[1].trim();
+          const ts = parseBrDateTime(candidate);
+          if (ts) {
+            emissionStr = candidate;
+            emissionTs = ts;
+            return false; // break out of .each
+          }
+        }
+      });
+      if (!emissionTs) {
+        const allText = $("body").text();
+        const m = allText.match(/Emiss[ãa]o\s*:?\s*(\d{2}\/\d{2}\/\d{4}(?:\s+\d{2}:\d{2}(?::\d{2})?)?)/i);
+        if (m && m[1]) {
+          emissionStr = m[1].trim();
+          emissionTs = parseBrDateTime(emissionStr);
+        }
+      }
       const items: Array<{
         name: string;
         quantity: string;
@@ -153,6 +197,8 @@ export const scrapeOne = internalAction({
         await ctx.runMutation(internal.nfce.updateInvoiceStatus, {
           invoiceId: args.invoiceId,
           status: "error",
+          emission_ts: emissionTs ?? undefined,
+          emission_str: emissionStr ?? undefined,
           error_message: hasTabResult
             ? `No items parsed from #tabResult (rows=${rowCount}). ${hint} Check dynamic JS/AJAX or differing column layout.`
             : "Items table '#tabResult' not found on page.",
@@ -161,6 +207,8 @@ export const scrapeOne = internalAction({
         await ctx.runMutation(internal.nfce.updateInvoiceStatus, {
           invoiceId: args.invoiceId,
           status: "done",
+          emission_ts: emissionTs ?? undefined,
+          emission_str: emissionStr ?? undefined,
           extracted_data: items,
         });
       }

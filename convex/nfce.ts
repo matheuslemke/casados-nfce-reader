@@ -94,6 +94,8 @@ export const updateInvoiceStatus = internalMutation({
       v.literal("done"),
       v.literal("error")
     ),
+    emission_ts: v.optional(v.number()),
+    emission_str: v.optional(v.string()),
     extracted_data: v.optional(
       v.array(
         v.object({
@@ -111,6 +113,8 @@ export const updateInvoiceStatus = internalMutation({
     await ctx.db.patch(args.invoiceId, {
       status: args.status,
       last_run: Date.now(),
+      emission_ts: args.emission_ts,
+      emission_str: args.emission_str,
       extracted_data: args.extracted_data,
       error_message: args.error_message,
     });

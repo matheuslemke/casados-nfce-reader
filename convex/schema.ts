@@ -12,6 +12,9 @@ const applicationTables = {
       v.literal("error")
     ),
     last_run: v.optional(v.number()),
+    // New fields for invoice issue date (Emissão)
+    emission_ts: v.optional(v.number()), // Unix epoch ms
+    emission_str: v.optional(v.string()), // Raw string as found on page
     extracted_data: v.optional(
       v.array(
         v.object({

@@ -55,6 +55,9 @@ function Content() {
 function InvoiceManager() {
   const [url, setUrl] = useState("");
   const [selectedInvoice, setSelectedInvoice] = useState<Id<"nfce_links"> | null>(null);
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth()); // 0-11
+  const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
   
   const invoices = useQuery(api.nfce.listInvoices) || [];
   const addInvoice = useMutation(api.nfce.addInvoiceLink);
@@ -70,8 +73,11 @@ function InvoiceManager() {
     if (!url.trim()) return;
 
     try {
-      await addInvoice({ url: url.trim() });
+      const newId = await addInvoice({ url: url.trim() });
       setUrl("");
+      if (newId) {
+        setSelectedInvoice(newId as Id<"nfce_links">);
+      }
       toast.success("Invoice link added successfully");
     } catch (error: any) {
       toast.error(error.message || "Failed to add invoice");
@@ -101,11 +107,35 @@ function InvoiceManager() {
 
   const pendingCount = invoices.filter((inv) => inv.status === "pending").length;
 
+  // Build available years from invoices with emission_ts
+  const yearsAvailable = Array.from(
+    new Set(
+      invoices
+        .map((inv: any) => (inv.emission_ts ? new Date(inv.emission_ts).getFullYear() : null))
+        .filter((y: number | null): y is number => y !== null)
+    )
+  ).sort((a, b) => b - a);
+  if (yearsAvailable.length === 0 || !yearsAvailable.includes(selectedYear)) {
+    if (!yearsAvailable.includes(now.getFullYear())) yearsAvailable.push(now.getFullYear());
+    yearsAvailable.sort((a, b) => b - a);
+  }
+
+  const filteredInvoices = invoices.filter((inv: any) => {
+    if (!inv.emission_ts) return true; // Always include undated invoices to avoid omissions
+    const d = new Date(inv.emission_ts);
+    return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+  });
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h2 className="text-2xl font-bold mb-4">Add NFC-e Invoice</h2>
-        <form onSubmit={handleAddInvoice} className="flex gap-2">
+        <form
+          onSubmit={(e) => {
+            void handleAddInvoice(e);
+          }}
+          className="flex gap-2"
+        >
           <input
             type="url"
             value={url}
@@ -124,23 +154,49 @@ function InvoiceManager() {
       </div>
 
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
           <h2 className="text-2xl font-bold">Invoices ({invoices.length})</h2>
-          <button
-            onClick={handleRunCrawler}
-            disabled={pendingCount === 0}
-            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Process Pending ({pendingCount})
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="text-sm text-gray-600">Month</label>
+            <select
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value, 10))}
+            >
+              {[
+                "January","February","March","April","May","June","July","August","September","October","November","December",
+              ].map((m, idx) => (
+                <option key={idx} value={idx}>{m}</option>
+              ))}
+            </select>
+            <label className="text-sm text-gray-600">Year</label>
+            <select
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
+            >
+              {yearsAvailable.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => {
+                void handleRunCrawler();
+              }}
+              disabled={pendingCount === 0}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Process Pending ({pendingCount})
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-2 max-h-[600px] overflow-y-auto">
-            {invoices.length === 0 ? (
+            {filteredInvoices.length === 0 ? (
               <p className="text-gray-500 text-center py-8">No invoices yet. Add one above!</p>
             ) : (
-              invoices.map((invoice) => (
+              filteredInvoices.map((invoice) => (
                 <div
                   key={invoice._id}
                   className={`p-4 border rounded-lg cursor-pointer transition-colors ${
@@ -167,7 +223,7 @@ function InvoiceManager() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDelete(invoice._id);
+                        void handleDelete(invoice._id);
                       }}
                       className="text-red-600 hover:text-red-800 text-sm"
                     >
