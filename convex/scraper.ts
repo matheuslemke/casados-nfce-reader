@@ -93,6 +93,24 @@ export const scrapeOne = internalAction({
         return t.replace(/^[^:]*:\s*/, "").trim();
       };
 
+      // Parse a Brazilian-formatted number string (e.g., "1.234,56") to a JS number
+      const parseBrNumber = (s: string): number => {
+        const nstr = cleanNumeric(s);
+        if (!nstr) return 0;
+        // Remove thousands separators and replace comma with dot
+        const normalized = nstr.replace(/\./g, "").replace(/,/g, ".");
+        const n = parseFloat(normalized);
+        return isNaN(n) ? 0 : n;
+      };
+
+      // Format a JS number as Brazilian currency string (e.g., "R$ 1.234,56")
+      const formatBrCurrency = (n: number): string => {
+        const fixed = (Math.round(n * 100) / 100).toFixed(2); // ensure two decimals
+        const [intPart, decPart] = fixed.split(".");
+        const intFmt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        return `R$ ${intFmt},${decPart}`;
+      };
+
       // Helper to parse Brazilian datetime strings like "02/10/2025 20:42:38"
       const parseBrDateTime = (s: string): number | null => {
         const m = s
@@ -241,11 +259,17 @@ export const scrapeOne = internalAction({
             : "Items table '#tabResult' not found on page.",
         });
       } else {
+        // Calculate total invoice amount by summing item total_price
+        const totalAmount = items.reduce((acc, it) => acc + parseBrNumber(it.total_price), 0);
+        const totalAmountStr = formatBrCurrency(totalAmount);
+
         await ctx.runMutation(internal.nfce.updateInvoiceStatus, {
           invoiceId: args.invoiceId,
           status: "done",
           emission_ts: emissionTs ?? undefined,
           emission_str: emissionStr ?? undefined,
+          total_amount: totalAmount,
+          total_amount_str: totalAmountStr,
           extracted_data: items,
         });
       }

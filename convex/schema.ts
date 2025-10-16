@@ -15,6 +15,9 @@ const applicationTables = {
     // New fields for invoice issue date (Emissão)
     emission_ts: v.optional(v.number()), // Unix epoch ms
     emission_str: v.optional(v.string()), // Raw string as found on page
+    // Calculated total invoice amount
+    total_amount: v.optional(v.number()), // Sum of item totals in BRL
+    total_amount_str: v.optional(v.string()), // Formatted string, e.g., "R$ 1.234,56"
     extracted_data: v.optional(
       v.array(
         v.object({
