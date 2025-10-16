@@ -182,6 +182,21 @@ function InvoiceManager() {
     return at - bt;
   });
 
+  // Calculate current month total across all invoices regardless of status
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime();
+  const currentMonthInvoices = invoices.filter((inv: any) =>
+    typeof inv.emission_ts === 'number' && inv.emission_ts >= startOfMonth && inv.emission_ts < startOfNextMonth
+  );
+  const currentMonthTotal = currentMonthInvoices.reduce(
+    (sum: number, inv: any) => sum + (typeof inv.total_amount === 'number' ? inv.total_amount : 0),
+    0
+  );
+  const currentMonthLabel = new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-sm p-6">
@@ -258,6 +273,11 @@ function InvoiceManager() {
               Process Pending ({pendingCount})
             </button>
           </div>
+        </div>
+
+        <div className="mb-4 text-sm">
+          <span className="font-medium">Total for {currentMonthLabel}:</span>{" "}
+          {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(currentMonthTotal)}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
