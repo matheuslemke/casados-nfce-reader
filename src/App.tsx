@@ -54,6 +54,7 @@ function Content() {
 
 function InvoiceManager() {
   const [url, setUrl] = useState("");
+  const [bulkInput, setBulkInput] = useState("");
   const [selectedInvoice, setSelectedInvoice] = useState<Id<"nfce_links"> | null>(null);
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth()); // 0-11
@@ -61,6 +62,7 @@ function InvoiceManager() {
   
   const invoices = useQuery(api.nfce.listInvoices) || [];
   const addInvoice = useMutation(api.nfce.addInvoiceLink);
+  const addInvoiceBulk = useMutation(api.nfce.addInvoiceLinksBulk);
   const deleteInvoice = useMutation(api.nfce.deleteInvoice);
   const runCrawler = useAction(api.scraper.runCrawler);
   const selectedInvoiceData = useQuery(
@@ -90,6 +92,54 @@ function InvoiceManager() {
       toast.success(result.message);
     } catch (error: any) {
       toast.error(error.message || "Failed to run crawler");
+    }
+  };
+
+  const handleBulkImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const raw = bulkInput.trim();
+    if (!raw) {
+      toast.error("No URLs found. Paste tab-separated links.");
+      return;
+    }
+    // Split by tabs or newlines, trim, drop empties, strip quotes/backticks
+    const parts = raw
+      .split(/[\t\n\r]+/)
+      .map((s) => s.replace(/[`'"“”‘’]/g, "").trim())
+      .filter(Boolean);
+    // Deduplicate while preserving order
+    const seen = new Set<string>();
+    const urls: string[] = [];
+    for (const p of parts) {
+      if (!seen.has(p)) {
+        seen.add(p);
+        urls.push(p);
+      }
+    }
+    if (urls.length === 0) {
+      toast.error("No valid URLs after parsing.");
+      return;
+    }
+
+    try {
+      const result: any = await addInvoiceBulk({ urls });
+      const { successCount, errorCount, results } = result || { successCount: 0, errorCount: 0, results: [] };
+      if (successCount > 0) {
+        toast.success(`Imported ${successCount} link${successCount > 1 ? "s" : ""}.`);
+        setBulkInput("");
+        // Select the first created invoice for quick access
+        const first = (results || []).find((r: any) => r.ok);
+        if (first && first.id) {
+          setSelectedInvoice(first.id as Id<"nfce_links">);
+        }
+      }
+      if (errorCount > 0) {
+        const errors = (results || []).filter((r: any) => !r.ok).slice(0, 5);
+        const details = errors.map((e: any) => `${e.url || "(empty)"} - ${e.error}`).join("\n");
+        toast.error(`Rejected ${errorCount} link${errorCount > 1 ? "s" : ""}.\n${details}${errorCount > errors.length ? "\n..." : ""}`);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Bulk import failed");
     }
   };
 
@@ -156,6 +206,19 @@ function InvoiceManager() {
           >
             Add
           </button>
+        </form>
+        <form onSubmit={(e) => { void handleBulkImport(e); }} className="mt-4 border-t pt-4 space-y-2">
+          <label className="block text-sm text-gray-700 font-medium">Bulk import (paste tab-separated links)</label>
+          <textarea
+            value={bulkInput}
+            onChange={(e) => setBulkInput(e.target.value)}
+            placeholder={"url1\turl2\turl3 or one per line"}
+            className="w-full h-28 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-500">Format: links separated by TABs or new lines</span>
+            <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Import</button>
+          </div>
         </form>
       </div>
 

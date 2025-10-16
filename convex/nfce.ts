@@ -28,6 +28,54 @@ export const addInvoiceLink = mutation({
   },
 });
 
+export const addInvoiceLinksBulk = mutation({
+  args: {
+    urls: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const seen = new Set<string>();
+    const results: Array<
+      | { url: string; ok: true; id: any }
+      | { url: string; ok: false; error: string }
+    > = [];
+
+    for (const raw of args.urls) {
+      const url = (raw || "").trim();
+      if (!url) {
+        results.push({ url, ok: false, error: "Empty URL" });
+        continue;
+      }
+      if (seen.has(url)) {
+        results.push({ url, ok: false, error: "Duplicate URL in batch" });
+        continue;
+      }
+      seen.add(url);
+
+      if (!url.includes("nfce") && !url.includes("sefaz")) {
+        results.push({ url, ok: false, error: "Invalid NFC-e URL format" });
+        continue;
+      }
+
+      const id = await ctx.db.insert("nfce_links", {
+        url,
+        status: "pending",
+        userId,
+      });
+      results.push({ url, ok: true, id });
+    }
+
+    const successCount = results.filter((r) => r.ok).length;
+    const errorCount = results.length - successCount;
+
+    return { successCount, errorCount, results };
+  },
+});
+
 export const listInvoices = query({
   args: {},
   handler: async (ctx) => {
