@@ -243,6 +243,7 @@ function InvoiceManager() {
                       Delete
                     </button>
                   </div>
+                  <div className="mb-2 text-sm text-gray-700">{invoice.issuer ?? '-'}</div>
                   {(invoice.total_amount_str || invoice.total_amount !== undefined) && (
                     <p className="text-sm text-gray-700">
                       <span className="font-medium">Total:</span>{" "}
@@ -281,6 +282,11 @@ function InvoiceManager() {
                   <p className="text-sm break-all">
                     <span className="font-medium">URL:</span> {selectedInvoiceData.url}
                   </p>
+                  {selectedInvoiceData.issuer && (
+                    <p className="text-sm">
+                      <span className="font-medium">Issuer:</span> {selectedInvoiceData.issuer}
+                    </p>
+                  )}
                   {(selectedInvoiceData.total_amount_str || selectedInvoiceData.total_amount !== undefined) && (
                     <p className="text-sm">
                       <span className="font-medium">Total:</span>{" "}

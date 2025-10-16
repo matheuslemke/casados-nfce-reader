@@ -128,6 +128,23 @@ export const scrapeOne = internalAction({
         return isNaN(date.getTime()) ? null : date.getTime();
       };
 
+      // Extract issuer (store name). Prefer #u20.txtTopo, fallback to the longest .txtTopo
+      let issuer: string | null = null;
+      const issuerNode = $('#u20.txtTopo');
+      if (issuerNode.length > 0) {
+        const t = issuerNode.text().replace(/\u00A0/g, " ").trim();
+        issuer = t || null;
+      }
+      if (!issuer) {
+        const candidates: string[] = $('.txtTopo')
+          .map((_, el) => $(el).text().replace(/\u00A0/g, " ").trim())
+          .get()
+          .filter((s: string) => s && s.length > 0);
+        if (candidates.length > 0) {
+          issuer = candidates.reduce((a: string, b: string) => (b.length > a.length ? b : a), "").trim() || null;
+        }
+      }
+
       // Try to locate the Emissão value near its label; fallback to page text scan
       let emissionStr: string | null = null;
       let emissionTs: number | null = null;
@@ -254,6 +271,7 @@ export const scrapeOne = internalAction({
           status: "error",
           emission_ts: emissionTs ?? undefined,
           emission_str: emissionStr ?? undefined,
+          issuer: issuer ?? undefined,
           error_message: hasTabResult
             ? `No items parsed from #tabResult (rows=${rowCount}). ${hint} Check dynamic JS/AJAX or differing column layout.`
             : "Items table '#tabResult' not found on page.",
@@ -270,6 +288,7 @@ export const scrapeOne = internalAction({
           emission_str: emissionStr ?? undefined,
           total_amount: totalAmount,
           total_amount_str: totalAmountStr,
+          issuer: issuer ?? undefined,
           extracted_data: items,
         });
       }

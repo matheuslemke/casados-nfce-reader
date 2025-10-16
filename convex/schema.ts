@@ -18,6 +18,7 @@ const applicationTables = {
     // Calculated total invoice amount
     total_amount: v.optional(v.number()), // Sum of item totals in BRL
     total_amount_str: v.optional(v.string()), // Formatted string, e.g., "R$ 1.234,56"
+    issuer: v.optional(v.string()), // Invoice issuer / store name
     extracted_data: v.optional(
       v.array(
         v.object({
