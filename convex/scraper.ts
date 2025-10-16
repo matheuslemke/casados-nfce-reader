@@ -49,7 +49,7 @@ export const scrapeOne = internalAction({
       status: "processing",
     });
 
-    try {
+  try {
       const response = await axios.get(invoice.url, {
         timeout: 30000,
         headers: {
@@ -66,36 +66,61 @@ export const scrapeOne = internalAction({
         total_price: string;
       }> = [];
 
-      $("table").each((_, table) => {
-        $(table)
-          .find("tr")
-          .each((_, row) => {
-            const cells = $(row).find("td");
-            if (cells.length >= 5) {
-              const name = $(cells[0]).text().trim();
-              const quantity = $(cells[1]).text().trim();
-              const unit = $(cells[2]).text().trim();
-              const unit_price = $(cells[3]).text().trim();
-              const total_price = $(cells[4]).text().trim();
+      // Prefer the known NFC-e items table by id
+      const itemsTable = $("#tabResult");
+      if (itemsTable.length > 0) {
+        // Some NFC-e pages render rows under <tbody>; fall back to direct <tr>
+        const rows = itemsTable.find("tbody tr").length
+          ? itemsTable.find("tbody tr")
+          : itemsTable.find("tr");
 
-              if (name && quantity && unit_price) {
-                items.push({
-                  name,
-                  quantity,
-                  unit,
-                  unit_price,
-                  total_price,
-                });
-              }
+        rows.each((_, row) => {
+          const cells = $(row).find("td");
+          if (cells.length >= 5) {
+            const name = $(cells[0]).text().trim();
+            const quantity = $(cells[1]).text().trim();
+            const unit = $(cells[2]).text().trim();
+            const unit_price = $(cells[3]).text().trim();
+            const total_price = $(cells[4]).text().trim();
+
+            if (name && quantity && unit_price) {
+              items.push({ name, quantity, unit, unit_price, total_price });
             }
-          });
-      });
+          }
+        });
+      } else {
+        // Fallback: scan all tables if #tabResult is not found
+        $("table").each((_, table) => {
+          $(table)
+            .find("tr")
+            .each((_, row) => {
+              const cells = $(row).find("td");
+              if (cells.length >= 5) {
+                const name = $(cells[0]).text().trim();
+                const quantity = $(cells[1]).text().trim();
+                const unit = $(cells[2]).text().trim();
+                const unit_price = $(cells[3]).text().trim();
+                const total_price = $(cells[4]).text().trim();
+
+                if (name && quantity && unit_price) {
+                  items.push({ name, quantity, unit, unit_price, total_price });
+                }
+              }
+            });
+        });
+      }
 
       if (items.length === 0) {
+        const hasTabResult = itemsTable.length > 0;
+        const rowCount = hasTabResult
+          ? (itemsTable.find("tbody tr").length || itemsTable.find("tr").length)
+          : 0;
         await ctx.runMutation(internal.nfce.updateInvoiceStatus, {
           invoiceId: args.invoiceId,
           status: "error",
-          error_message: "No items found in the invoice",
+          error_message: hasTabResult
+            ? `No items parsed from #tabResult (rows=${rowCount}). Check if the page uses dynamic JS or different column layout.`
+            : "Items table '#tabResult' not found on page.",
         });
       } else {
         await ctx.runMutation(internal.nfce.updateInvoiceStatus, {
