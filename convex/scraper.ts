@@ -59,6 +59,40 @@ export const scrapeOne = internalAction({
 
       const $ = cheerio.load(response.data);
 
+      // Helper to clean numeric strings by removing labels and non-numeric symbols
+      const cleanNumeric = (s: string): string => {
+        let t = s.replace(/\u00A0/g, " ") // NBSP to space
+          .replace(/R\$\s*/gi, "") // remove currency symbol
+          .trim();
+
+        // Prefer Brazilian format: 1.234,56 or 0,42 (optionally with leading minus)
+        const brMatches = t.match(/-?\d{1,3}(?:\.\d{3})*(?:,\d+)?/g);
+        if (brMatches && brMatches.length) {
+          return brMatches[brMatches.length - 1];
+        }
+
+        // Fallback: generic digits with optional decimal separator
+        const genericMatches = t.match(/-?\d+(?:[.,]\d+)?/g);
+        if (genericMatches && genericMatches.length) {
+          return genericMatches[genericMatches.length - 1];
+        }
+
+        // Last resort: strip non-numeric, then trim leading/trailing punctuation
+        t = t
+          .replace(/[A-Za-zÀ-ÖØ-öø-ÿ]+/g, "")
+          .replace(/[^0-9,.-]+/g, "")
+          .trim()
+          .replace(/^[.,]+/, "")
+          .replace(/[.,]+$/, "");
+        return t;
+      };
+
+      // Helper to clean unit labels like "UN: UN" -> "UN"
+      const cleanUnit = (s: string): string => {
+        const t = s.replace(/\u00A0/g, " ").trim();
+        return t.replace(/^[^:]*:\s*/, "").trim();
+      };
+
       // Helper to parse Brazilian datetime strings like "02/10/2025 20:42:38"
       const parseBrDateTime = (s: string): number | null => {
         const m = s
@@ -121,17 +155,20 @@ export const scrapeOne = internalAction({
             // Extract nested spans with specific classes
             const name = $(row).find('.txtTit2').text().trim();
             // const code = $(row).find('.RCod').text().trim(); // parsed but not stored
-            const quantity = $(row).find('.Rqtd').text().trim();
-            const unit = $(row).find('.RUN').text().trim();
-            const unit_price = $(row).find('.RvlUnit').text().trim();
+            const quantityRaw = $(row).find('.Rqtd').text().trim();
+            const unitRaw = $(row).find('.RUN').text().trim();
+            const unit = cleanUnit(unitRaw);
+            const unitPriceRaw = $(row).find('.RvlUnit').text().trim();
             const total_price = $(row).find('.valor').text().trim();
+            const quantity = cleanNumeric(quantityRaw);
+            const unit_price = cleanNumeric(unitPriceRaw);
 
             // Fallbacks if some fields are inside td text without spans
             const fallbackCells = $(row).find('td');
             const fallbackName = name || fallbackCells.eq(0).text().trim();
-            const fallbackQuantity = quantity || fallbackCells.eq(1).text().trim();
-            const fallbackUnit = unit || fallbackCells.eq(2).text().trim();
-            const fallbackUnitPrice = unit_price || fallbackCells.eq(3).text().trim();
+            const fallbackQuantity = quantity || cleanNumeric(fallbackCells.eq(1).text().trim());
+            const fallbackUnit = unit || cleanUnit(fallbackCells.eq(2).text().trim());
+            const fallbackUnitPrice = unit_price || cleanNumeric(fallbackCells.eq(3).text().trim());
             const fallbackTotalPrice = total_price || fallbackCells.eq(4).text().trim();
 
             if (fallbackName && fallbackQuantity && fallbackUnitPrice) {
@@ -153,9 +190,9 @@ export const scrapeOne = internalAction({
             const cells = $(row).find('td');
             if (cells.length >= 5) {
               const name = $(cells[0]).find('.txtTit2').text().trim() || $(cells[0]).text().trim();
-              const quantity = $(cells[1]).find('.Rqtd').text().trim() || $(cells[1]).text().trim();
-              const unit = $(cells[2]).find('.RUN').text().trim() || $(cells[2]).text().trim();
-              const unit_price = $(cells[3]).find('.RvlUnit').text().trim() || $(cells[3]).text().trim();
+              const quantity = cleanNumeric($(cells[1]).find('.Rqtd').text().trim() || $(cells[1]).text().trim());
+              const unit = cleanUnit($(cells[2]).find('.RUN').text().trim() || $(cells[2]).text().trim());
+              const unit_price = cleanNumeric($(cells[3]).find('.RvlUnit').text().trim() || $(cells[3]).text().trim());
               const total_price = $(cells[4]).find('.valor').text().trim() || $(cells[4]).text().trim();
 
               if (name && quantity && unit_price) {
@@ -173,9 +210,9 @@ export const scrapeOne = internalAction({
               const cells = $(row).find("td");
               if (cells.length >= 5) {
                 const name = $(cells[0]).text().trim();
-                const quantity = $(cells[1]).text().trim();
-                const unit = $(cells[2]).text().trim();
-                const unit_price = $(cells[3]).text().trim();
+                const quantity = cleanNumeric($(cells[1]).text().trim());
+                const unit = cleanUnit($(cells[2]).text().trim());
+                const unit_price = cleanNumeric($(cells[3]).text().trim());
                 const total_price = $(cells[4]).text().trim();
 
                 if (name && quantity && unit_price) {
