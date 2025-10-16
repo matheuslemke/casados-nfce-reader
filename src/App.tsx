@@ -265,6 +265,15 @@ function InvoiceManager() {
                   <p className="text-sm break-all">
                     <span className="font-medium">URL:</span> {selectedInvoiceData.url}
                   </p>
+                  {(selectedInvoiceData.total_amount_str || selectedInvoiceData.total_amount !== undefined) && (
+                    <p className="text-sm">
+                      <span className="font-medium">Total:</span>{" "}
+                      {selectedInvoiceData.total_amount_str ??
+                        new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+                          selectedInvoiceData.total_amount || 0
+                        )}
+                    </p>
+                  )}
                 </div>
 
                 {selectedInvoiceData.error_message && (
