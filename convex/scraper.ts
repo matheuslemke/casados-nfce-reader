@@ -69,25 +69,57 @@ export const scrapeOne = internalAction({
       // Prefer the known NFC-e items table by id
       const itemsTable = $("#tabResult");
       if (itemsTable.length > 0) {
-        // Some NFC-e pages render rows under <tbody>; fall back to direct <tr>
-        const rows = itemsTable.find("tbody tr").length
-          ? itemsTable.find("tbody tr")
-          : itemsTable.find("tr");
+        // Target item rows with id starting with "Item" (e.g., Item1, Item2)
+        const itemRows = itemsTable.find('tr[id^="Item"]');
 
-        rows.each((_, row) => {
-          const cells = $(row).find("td");
-          if (cells.length >= 5) {
-            const name = $(cells[0]).text().trim();
-            const quantity = $(cells[1]).text().trim();
-            const unit = $(cells[2]).text().trim();
-            const unit_price = $(cells[3]).text().trim();
-            const total_price = $(cells[4]).text().trim();
+        if (itemRows.length > 0) {
+          itemRows.each((_, row) => {
+            // Extract nested spans with specific classes
+            const name = $(row).find('.txtTit2').text().trim();
+            // const code = $(row).find('.RCod').text().trim(); // parsed but not stored
+            const quantity = $(row).find('.Rqtd').text().trim();
+            const unit = $(row).find('.RUN').text().trim();
+            const unit_price = $(row).find('.RvlUnit').text().trim();
+            const total_price = $(row).find('.valor').text().trim();
 
-            if (name && quantity && unit_price) {
-              items.push({ name, quantity, unit, unit_price, total_price });
+            // Fallbacks if some fields are inside td text without spans
+            const fallbackCells = $(row).find('td');
+            const fallbackName = name || fallbackCells.eq(0).text().trim();
+            const fallbackQuantity = quantity || fallbackCells.eq(1).text().trim();
+            const fallbackUnit = unit || fallbackCells.eq(2).text().trim();
+            const fallbackUnitPrice = unit_price || fallbackCells.eq(3).text().trim();
+            const fallbackTotalPrice = total_price || fallbackCells.eq(4).text().trim();
+
+            if (fallbackName && fallbackQuantity && fallbackUnitPrice) {
+              items.push({
+                name: fallbackName,
+                quantity: fallbackQuantity,
+                unit: fallbackUnit,
+                unit_price: fallbackUnitPrice,
+                total_price: fallbackTotalPrice,
+              });
             }
-          }
-        });
+          });
+        } else {
+          // Some pages may render under <tbody> without ids; fall back to tbody/tr
+          const rows = itemsTable.find('tbody tr').length
+            ? itemsTable.find('tbody tr')
+            : itemsTable.find('tr');
+          rows.each((_, row) => {
+            const cells = $(row).find('td');
+            if (cells.length >= 5) {
+              const name = $(cells[0]).find('.txtTit2').text().trim() || $(cells[0]).text().trim();
+              const quantity = $(cells[1]).find('.Rqtd').text().trim() || $(cells[1]).text().trim();
+              const unit = $(cells[2]).find('.RUN').text().trim() || $(cells[2]).text().trim();
+              const unit_price = $(cells[3]).find('.RvlUnit').text().trim() || $(cells[3]).text().trim();
+              const total_price = $(cells[4]).find('.valor').text().trim() || $(cells[4]).text().trim();
+
+              if (name && quantity && unit_price) {
+                items.push({ name, quantity, unit, unit_price, total_price });
+              }
+            }
+          });
+        }
       } else {
         // Fallback: scan all tables if #tabResult is not found
         $("table").each((_, table) => {
@@ -112,14 +144,17 @@ export const scrapeOne = internalAction({
 
       if (items.length === 0) {
         const hasTabResult = itemsTable.length > 0;
-        const rowCount = hasTabResult
-          ? (itemsTable.find("tbody tr").length || itemsTable.find("tr").length)
-          : 0;
+        const itemRowsCount = hasTabResult ? itemsTable.find('tr[id^="Item"]').length : 0;
+        const fallbackRowsCount = hasTabResult ? (itemsTable.find('tbody tr').length || itemsTable.find('tr').length) : 0;
+        const rowCount = Math.max(itemRowsCount, fallbackRowsCount);
+        const hint = hasTabResult && itemRowsCount > 0
+          ? 'Found Item rows but spans (.txtTit2, .Rqtd, .RUN, .RvlUnit, .valor) were missing or empty.'
+          : 'Rows present but not matching expected structure.';
         await ctx.runMutation(internal.nfce.updateInvoiceStatus, {
           invoiceId: args.invoiceId,
           status: "error",
           error_message: hasTabResult
-            ? `No items parsed from #tabResult (rows=${rowCount}). Check if the page uses dynamic JS or different column layout.`
+            ? `No items parsed from #tabResult (rows=${rowCount}). ${hint} Check dynamic JS/AJAX or differing column layout.`
             : "Items table '#tabResult' not found on page.",
         });
       } else {
