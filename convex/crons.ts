@@ -1,5 +1,5 @@
 import { cronJobs } from "convex/server";
-import { internal } from "./_generated/api";
+import { internal, api } from "./_generated/api";
 
 const crons = cronJobs();
 
@@ -9,6 +9,20 @@ crons.interval(
   { hours: 24 },
   internal.scraperInternal.runCrawlerInternal,
   {}
+);
+
+// Run item sync and classification every 6 hours
+crons.interval(
+  "sync and classify invoice items",
+  { hours: 6 },
+  api.classify.syncInvoiceItemsFromInvoices,
+  { reprocessAll: false }
+);
+crons.interval(
+  "classify unclassified items",
+  { hours: 6 },
+  api.classify.classifyItems,
+  { batchSize: 500 }
 );
 
 export default crons;

@@ -15,7 +15,12 @@ export const runCrawler = action({
       throw new Error("Not authenticated");
     }
 
-    const pending: Array<{ _id: any; url: string; status: string; userId: any }> = await ctx.runQuery(internal.nfceInternal.listAllPendingInternal, {});
+    const pending: Array<{ 
+      _id: import("./_generated/dataModel").Id<"nfce_links">; 
+      url: string; 
+      status: string; 
+      userId: import("./_generated/dataModel").Id<"users"> 
+    }> = await ctx.runQuery(internal.nfceInternal.listAllPendingInternal, {});
     
     if (pending.length === 0) {
       return { message: "No pending invoices to process", count: 0 };
@@ -294,11 +299,11 @@ export const scrapeOne = internalAction({
       }
 
       return items;
-    } catch (error: any) {
+    } catch (error: unknown) {
       await ctx.runMutation(internal.nfce.updateInvoiceStatus, {
         invoiceId: args.invoiceId,
         status: "error",
-        error_message: error.message || "Unknown error occurred",
+        error_message: error instanceof Error ? error.message : "Unknown error occurred",
       });
       return null;
     }

@@ -1,7 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { internal } from "./_generated/api";
 
 export const addInvoiceLink = mutation({
   args: {
@@ -40,7 +39,7 @@ export const addInvoiceLinksBulk = mutation({
 
     const seen = new Set<string>();
     const results: Array<
-      | { url: string; ok: true; id: any }
+      | { url: string; ok: true; id: import("./_generated/dataModel").Id<"nfce_links"> }
       | { url: string; ok: false; error: string }
     > = [];
 
@@ -128,6 +127,31 @@ export const deleteInvoice = mutation({
       throw new Error("Invoice not found");
     }
 
+    // First, get all invoice items for this invoice
+    const invoiceItems = await ctx.db
+      .query("invoiceItems")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .filter((q) => q.eq(q.field("linkId"), args.invoiceId))
+      .collect();
+
+    // Delete classification logs for each invoice item
+    for (const item of invoiceItems) {
+      const classificationLogs = await ctx.db
+        .query("classificationLogs")
+        .withIndex("by_item", (q) => q.eq("itemId", item._id))
+        .collect();
+      
+      for (const log of classificationLogs) {
+        await ctx.db.delete(log._id);
+      }
+    }
+
+    // Delete all invoice items for this invoice
+    for (const item of invoiceItems) {
+      await ctx.db.delete(item._id);
+    }
+
+    // Finally, delete the invoice itself
     await ctx.db.delete(args.invoiceId);
     return null;
   },

@@ -1,21 +1,66 @@
-import { Authenticated, Unauthenticated, useQuery, useMutation, useAction } from "convex/react";
+import {
+  Authenticated,
+  Unauthenticated,
+  useQuery,
+  useMutation,
+  useAction,
+} from "convex/react";
 import { api } from "../convex/_generated/api";
 import { SignInForm } from "./SignInForm";
 import { SignOutButton } from "./SignOutButton";
+import { Management } from "./Management";
+import { MonthNavigation } from "./MonthNavigation";
+import { CanonicalProductsPage } from "./CanonicalProductsPage";
 import { Toaster, toast } from "sonner";
 import { useState } from "react";
 import { Id } from "../convex/_generated/dataModel";
 
 export default function App() {
+  const [currentScreen, setCurrentScreen] = useState<"home" | "management" | "products">("home");
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm h-16 flex justify-between items-center border-b shadow-sm px-4">
-        <h2 className="text-xl font-semibold text-primary">NFC-e Crawler</h2>
+        <div className="flex items-center gap-6">
+          <h2 className="text-xl font-semibold text-primary">NFC-e Crawler</h2>
+          <nav className="flex gap-4">
+            <button
+              onClick={() => setCurrentScreen("home")}
+              className={`px-3 py-1 rounded transition-colors ${
+                currentScreen === "home"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:text-blue-600"
+              }`}
+            >
+              Home
+            </button>
+            <button
+              onClick={() => setCurrentScreen("management")}
+              className={`px-3 py-1 rounded transition-colors ${
+                currentScreen === "management"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:text-blue-600"
+              }`}
+            >
+              Management
+            </button>
+            <button
+              onClick={() => setCurrentScreen("products")}
+              className={`px-3 py-1 rounded transition-colors ${
+                currentScreen === "products"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:text-blue-600"
+              }`}
+            >
+              Products
+            </button>
+          </nav>
+        </div>
         <SignOutButton />
       </header>
       <main className="flex-1 p-8">
         <div className="w-full max-w-6xl mx-auto">
-          <Content />
+          <Content currentScreen={currentScreen} setCurrentScreen={setCurrentScreen} />
         </div>
       </main>
       <Toaster />
@@ -23,7 +68,13 @@ export default function App() {
   );
 }
 
-function Content() {
+function Content({ 
+  currentScreen, 
+  setCurrentScreen 
+}: { 
+  currentScreen: "home" | "management" | "products";
+  setCurrentScreen: (screen: "home" | "management" | "products") => void;
+}) {
   const loggedInUser = useQuery(api.auth.loggedInUser);
 
   if (loggedInUser === undefined) {
@@ -37,12 +88,22 @@ function Content() {
   return (
     <div className="flex flex-col gap-8">
       <Authenticated>
-        <InvoiceManager />
+        {currentScreen === "home" ? (
+          <InvoiceManager />
+        ) : currentScreen === "management" ? (
+          <Management />
+        ) : (
+          <CanonicalProductsPage onBack={() => setCurrentScreen("home")} />
+        )}
       </Authenticated>
       <Unauthenticated>
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-primary mb-4">NFC-e Web Crawler</h1>
-          <p className="text-xl text-secondary mb-8">Sign in to manage your invoices</p>
+          <h1 className="text-4xl font-bold text-primary mb-4">
+            NFC-e Web Crawler
+          </h1>
+          <p className="text-xl text-secondary mb-8">
+            Sign in to manage your invoices
+          </p>
           <div className="max-w-md mx-auto">
             <SignInForm />
           </div>
@@ -55,11 +116,17 @@ function Content() {
 function InvoiceManager() {
   const [url, setUrl] = useState("");
   const [bulkInput, setBulkInput] = useState("");
-  const [selectedInvoice, setSelectedInvoice] = useState<Id<"nfce_links"> | null>(null);
+  const [selectedInvoice, setSelectedInvoice] =
+    useState<Id<"nfce_links"> | null>(null);
   const now = new Date();
-  const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth()); // 0-11
+  const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth() + 1); // 1-12
   const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
-  
+
+  const handleMonthChange = (month: number, year: number) => {
+    setSelectedMonth(month);
+    setSelectedYear(year);
+  };
+
   const invoices = useQuery(api.nfce.listInvoices) || [];
   const addInvoice = useMutation(api.nfce.addInvoiceLink);
   const addInvoiceBulk = useMutation(api.nfce.addInvoiceLinksBulk);
@@ -81,17 +148,17 @@ function InvoiceManager() {
         setSelectedInvoice(newId as Id<"nfce_links">);
       }
       toast.success("Invoice link added successfully");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to add invoice");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to add invoice");
     }
   };
 
   const handleRunCrawler = async () => {
     try {
       const result = await runCrawler({});
-      toast.success(result.message);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to run crawler");
+      toast.success(`Crawler completed: ${result.count} processed`);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to run crawler");
     }
   };
 
@@ -122,24 +189,34 @@ function InvoiceManager() {
     }
 
     try {
-      const result: any = await addInvoiceBulk({ urls });
-      const { successCount, errorCount, results } = result || { successCount: 0, errorCount: 0, results: [] };
+      const result = await addInvoiceBulk({ urls });
+      const { successCount, errorCount, results } = result || {
+        successCount: 0,
+        errorCount: 0,
+        results: [],
+      };
       if (successCount > 0) {
-        toast.success(`Imported ${successCount} link${successCount > 1 ? "s" : ""}.`);
+        toast.success(
+          `Imported ${successCount} link${successCount > 1 ? "s" : ""}.`
+        );
         setBulkInput("");
         // Select the first created invoice for quick access
-        const first = (results || []).find((r: any) => r.ok);
+        const first = (results || []).find((r) => r.ok);
         if (first && first.id) {
-          setSelectedInvoice(first.id as Id<"nfce_links">);
+          setSelectedInvoice(first.id);
         }
       }
       if (errorCount > 0) {
-        const errors = (results || []).filter((r: any) => !r.ok).slice(0, 5);
-        const details = errors.map((e: any) => `${e.url || "(empty)"} - ${e.error}`).join("\n");
-        toast.error(`Rejected ${errorCount} link${errorCount > 1 ? "s" : ""}.\n${details}${errorCount > errors.length ? "\n..." : ""}`);
+        const errors = (results || []).filter((r) => !r.ok).slice(0, 5);
+        const details = errors
+          .map((e) => `${e.url || "(empty)"} - ${e.error}`)
+          .join("\n");
+        toast.error(
+          `Rejected ${errorCount} link${errorCount > 1 ? "s" : ""}.\n${details}${errorCount > errors.length ? "\n..." : ""}`
+        );
       }
-    } catch (error: any) {
-      toast.error(error.message || "Bulk import failed");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Bulk import failed");
     }
   };
 
@@ -150,51 +227,74 @@ function InvoiceManager() {
         setSelectedInvoice(null);
       }
       toast.success("Invoice deleted");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete invoice");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete invoice");
     }
   };
 
-  const pendingCount = invoices.filter((inv) => inv.status === "pending").length;
+  const pendingCount = invoices.filter(
+    (inv) => inv.status === "pending"
+  ).length;
 
   // Build available years from invoices with emission_ts
   const yearsAvailable = Array.from(
     new Set(
-      invoices
-        .map((inv: any) => (inv.emission_ts ? new Date(inv.emission_ts).getFullYear() : null))
+      (invoices as Invoice[])
+        .map((inv) =>
+          inv.emission_ts ? new Date(inv.emission_ts).getFullYear() : null
+        )
         .filter((y: number | null): y is number => y !== null)
     )
   ).sort((a, b) => b - a);
   if (yearsAvailable.length === 0 || !yearsAvailable.includes(selectedYear)) {
-    if (!yearsAvailable.includes(now.getFullYear())) yearsAvailable.push(now.getFullYear());
+    if (!yearsAvailable.includes(now.getFullYear()))
+      yearsAvailable.push(now.getFullYear());
     yearsAvailable.sort((a, b) => b - a);
   }
 
-  const filteredInvoices = invoices.filter((inv: any) => {
+  const filteredInvoices = (invoices as Invoice[]).filter((inv) => {
     if (!inv.emission_ts) return true; // Always include undated invoices to avoid omissions
     const d = new Date(inv.emission_ts);
-    return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+    return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear;
   });
 
-  const sortedInvoices = [...filteredInvoices].sort((a: any, b: any) => {
-    const at = typeof a.emission_ts === 'number' ? a.emission_ts : Number.POSITIVE_INFINITY;
-    const bt = typeof b.emission_ts === 'number' ? b.emission_ts : Number.POSITIVE_INFINITY;
+  const sortedInvoices = [...filteredInvoices].sort((a, b) => {
+    const at =
+      typeof a.emission_ts === "number"
+        ? a.emission_ts
+        : Number.POSITIVE_INFINITY;
+    const bt =
+      typeof b.emission_ts === "number"
+        ? b.emission_ts
+        : Number.POSITIVE_INFINITY;
     return at - bt;
   });
 
   // Calculate current month total across all invoices regardless of status
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-  const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime();
-  const currentMonthInvoices = invoices.filter((inv: any) =>
-    typeof inv.emission_ts === 'number' && inv.emission_ts >= startOfMonth && inv.emission_ts < startOfNextMonth
+  const startOfNextMonth = new Date(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    1
+  ).getTime();
+  const currentMonthInvoices = (invoices as Invoice[]).filter(
+    (inv) =>
+      typeof inv.emission_ts === "number" &&
+      inv.emission_ts >= startOfMonth &&
+      inv.emission_ts < startOfNextMonth
   );
   const currentMonthTotal = currentMonthInvoices.reduce(
-    (sum: number, inv: any) => sum + (typeof inv.total_amount === 'number' ? inv.total_amount : 0),
+    (sum: number, inv) =>
+      sum + (typeof inv.total_amount === "number" ? inv.total_amount : 0),
     0
   );
-  const currentMonthLabel = new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
+  const currentMonthLabel = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    1
+  ).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
   });
 
   return (
@@ -222,8 +322,15 @@ function InvoiceManager() {
             Add
           </button>
         </form>
-        <form onSubmit={(e) => { void handleBulkImport(e); }} className="mt-4 border-t pt-4 space-y-2">
-          <label className="block text-sm text-gray-700 font-medium">Bulk import (paste tab-separated links)</label>
+        <form
+          onSubmit={(e) => {
+            void handleBulkImport(e);
+          }}
+          className="mt-4 border-t pt-4 space-y-2"
+        >
+          <label className="block text-sm text-gray-700 font-medium">
+            Bulk import (paste tab-separated links)
+          </label>
           <textarea
             value={bulkInput}
             onChange={(e) => setBulkInput(e.target.value)}
@@ -231,15 +338,24 @@ function InvoiceManager() {
             className="w-full h-28 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-500">Format: links separated by TABs or new lines</span>
-            <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Import</button>
+            <span className="text-xs text-gray-500">
+              Format: links separated by TABs or new lines
+            </span>
+            <button
+              type="submit"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Import
+            </button>
           </div>
         </form>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
-          <h2 className="text-2xl font-bold">Invoices ({sortedInvoices.length})</h2>
+          <h2 className="text-2xl font-bold">
+            Invoices ({sortedInvoices.length})
+          </h2>
           <div className="flex flex-wrap items-center gap-2">
             <label className="text-sm text-gray-600">Month</label>
             <select
@@ -248,9 +364,22 @@ function InvoiceManager() {
               onChange={(e) => setSelectedMonth(parseInt(e.target.value, 10))}
             >
               {[
-                "January","February","March","April","May","June","July","August","September","October","November","December",
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
               ].map((m, idx) => (
-                <option key={idx} value={idx}>{m}</option>
+                <option key={idx} value={idx + 1}>
+                  {m}
+                </option>
               ))}
             </select>
             <label className="text-sm text-gray-600">Year</label>
@@ -260,7 +389,9 @@ function InvoiceManager() {
               onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
             >
               {yearsAvailable.map((y) => (
-                <option key={y} value={y}>{y}</option>
+                <option key={y} value={y}>
+                  {y}
+                </option>
               ))}
             </select>
             <button
@@ -277,13 +408,18 @@ function InvoiceManager() {
 
         <div className="mb-4 text-sm">
           <span className="font-medium">Total for {currentMonthLabel}:</span>{" "}
-          {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(currentMonthTotal)}
+          {new Intl.NumberFormat("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+          }).format(currentMonthTotal)}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-2 max-h-[600px] overflow-y-auto">
             {sortedInvoices.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No invoices yet. Add one above!</p>
+              <p className="text-gray-500 text-center py-8">
+                No invoices yet. Add one above!
+              </p>
             ) : (
               sortedInvoices.map((invoice) => (
                 <div
@@ -298,19 +434,21 @@ function InvoiceManager() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
                       <span className="text-sm text-gray-700">
-                        {typeof invoice.emission_ts === 'number'
-                          ? new Date(invoice.emission_ts).toLocaleDateString('pt-BR')
-                          : 'Sem data'}
+                        {typeof invoice.emission_ts === "number"
+                          ? new Date(invoice.emission_ts).toLocaleDateString(
+                              "pt-BR"
+                            )
+                          : "Sem data"}
                       </span>
                       <span
                         className={`px-2 py-1 text-xs rounded-full ${
                           invoice.status === "done"
                             ? "bg-green-100 text-green-800"
                             : invoice.status === "error"
-                            ? "bg-red-100 text-red-800"
-                            : invoice.status === "processing"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-gray-100 text-gray-800"
+                              ? "bg-red-100 text-red-800"
+                              : invoice.status === "processing"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-800"
                         }`}
                       >
                         {invoice.status}
@@ -326,14 +464,18 @@ function InvoiceManager() {
                       Delete
                     </button>
                   </div>
-                  <div className="mb-2 text-sm text-gray-700">{invoice.issuer ?? '-'}</div>
-                  {(invoice.total_amount_str || invoice.total_amount !== undefined) && (
+                  <div className="mb-2 text-sm text-gray-700">
+                    {invoice.issuer ?? "-"}
+                  </div>
+                  {(invoice.total_amount_str ||
+                    invoice.total_amount !== undefined) && (
                     <p className="text-sm text-gray-700">
                       <span className="font-medium">Total:</span>{" "}
                       {invoice.total_amount_str ??
-                        new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-                          invoice.total_amount || 0
-                        )}
+                        new Intl.NumberFormat("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        }).format(invoice.total_amount || 0)}
                     </p>
                   )}
                 </div>
@@ -353,30 +495,34 @@ function InvoiceManager() {
                         selectedInvoiceData.status === "done"
                           ? "bg-green-100 text-green-800"
                           : selectedInvoiceData.status === "error"
-                          ? "bg-red-100 text-red-800"
-                          : selectedInvoiceData.status === "processing"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-gray-100 text-gray-800"
+                            ? "bg-red-100 text-red-800"
+                            : selectedInvoiceData.status === "processing"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-gray-100 text-gray-800"
                       }`}
                     >
                       {selectedInvoiceData.status}
                     </span>
                   </p>
                   <p className="text-sm break-all">
-                    <span className="font-medium">URL:</span> {selectedInvoiceData.url}
+                    <span className="font-medium">URL:</span>{" "}
+                    {selectedInvoiceData.url}
                   </p>
                   {selectedInvoiceData.issuer && (
                     <p className="text-sm">
-                      <span className="font-medium">Issuer:</span> {selectedInvoiceData.issuer}
+                      <span className="font-medium">Issuer:</span>{" "}
+                      {selectedInvoiceData.issuer}
                     </p>
                   )}
-                  {(selectedInvoiceData.total_amount_str || selectedInvoiceData.total_amount !== undefined) && (
+                  {(selectedInvoiceData.total_amount_str ||
+                    selectedInvoiceData.total_amount !== undefined) && (
                     <p className="text-sm">
                       <span className="font-medium">Total:</span>{" "}
                       {selectedInvoiceData.total_amount_str ??
-                        new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-                          selectedInvoiceData.total_amount || 0
-                        )}
+                        new Intl.NumberFormat("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        }).format(selectedInvoiceData.total_amount || 0)}
                     </p>
                   )}
                 </div>
@@ -384,35 +530,72 @@ function InvoiceManager() {
                 {selectedInvoiceData.error_message && (
                   <div className="bg-red-50 border border-red-200 rounded p-3 mb-4">
                     <p className="text-sm text-red-800">
-                      <span className="font-medium">Error:</span> {selectedInvoiceData.error_message}
+                      <span className="font-medium">Error:</span>{" "}
+                      {selectedInvoiceData.error_message}
                     </p>
                   </div>
                 )}
 
-                {selectedInvoiceData.extracted_data && selectedInvoiceData.extracted_data.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">Extracted Items ({selectedInvoiceData.extracted_data.length})</h4>
-                    <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                      {selectedInvoiceData.extracted_data.map((item, idx) => (
-                        <div key={idx} className="bg-white p-3 rounded border border-gray-200">
-                          <p className="font-medium text-sm">{item.name}</p>
-                          <div className="grid grid-cols-2 gap-2 mt-2 text-xs text-gray-600">
-                            <p>Qty: {item.quantity} {item.unit}</p>
-                            <p>Unit: {item.unit_price}</p>
-                            <p className="col-span-2 font-medium">Total: {item.total_price}</p>
+                {selectedInvoiceData.extracted_data &&
+                  selectedInvoiceData.extracted_data.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-2">
+                        Extracted Items (
+                        {selectedInvoiceData.extracted_data.length})
+                      </h4>
+                      <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                        {selectedInvoiceData.extracted_data.map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="bg-white p-3 rounded border border-gray-200"
+                          >
+                            <p className="font-medium text-sm">{item.name}</p>
+                            <div className="grid grid-cols-2 gap-2 mt-2 text-xs text-gray-600">
+                              <p>
+                                Qty: {item.quantity} {item.unit}
+                              </p>
+                              <p>Unit: {item.unit_price}</p>
+                              <p className="col-span-2 font-medium">
+                                Total: {item.total_price}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-8">Select an invoice to view details</p>
+              <p className="text-gray-500 text-center py-8">
+                Select an invoice to view details
+              </p>
             )}
           </div>
         </div>
       </div>
+
+
     </div>
   );
+}
+
+interface Invoice {
+  _id: Id<"nfce_links">;
+  url: string;
+  status: string;
+  emission_ts?: number;
+  issuer?: string;
+  total_amount?: number;
+  total_amount_str?: string;
+}
+
+interface BulkImportResult {
+  successCount: number;
+  errorCount: number;
+  results: Array<{
+    ok: boolean;
+    id?: Id<"nfce_links">;
+    url?: string;
+    error?: string;
+  }>;
 }
