@@ -24,7 +24,8 @@ export function CanonicalProductsPage({ onBack }: CanonicalProductsPageProps) {
   const [newProductUnitDetail, setNewProductUnitDetail] = useState("");
 
   // Queries and mutations
-  const canonicalProducts = useQuery(api.catalog.listCanonicalProducts) || [];
+  const canonicalProductsQuery = useQuery(api.catalog.listCanonicalProducts);
+  const canonicalProducts = useMemo(() => canonicalProductsQuery || [], [canonicalProductsQuery]);
   const createCanonicalProduct = useMutation(api.catalog.createCanonicalProduct);
 
   // Filter and sort products

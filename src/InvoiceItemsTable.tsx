@@ -39,13 +39,15 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
   }, [sortField, sortDirection]);
 
   // Fetch invoice items with details (now properly typed)
-  const invoiceItems: InvoiceItemWithDetails[] = useQuery(api.invoiceItems.listInvoiceItemsWithDetails, {
+  const invoiceItemsQuery = useQuery(api.invoiceItems.listInvoiceItemsWithDetails, {
     month: selectedMonth,
     year: selectedYear,
-  }) || [];
+  });
+  const invoiceItems: InvoiceItemWithDetails[] = useMemo(() => invoiceItemsQuery || [], [invoiceItemsQuery]);
 
   // Fetch canonical products for dropdown
-  const canonicalProducts = useQuery(api.catalog.listCanonicalProducts) || [];
+  const canonicalProductsQuery = useQuery(api.catalog.listCanonicalProducts);
+  const canonicalProducts = useMemo(() => canonicalProductsQuery || [], [canonicalProductsQuery]);
 
   // Mutation to update canonical product assignment
   const updateItemCanonicalProduct = useMutation(api.invoiceItems.updateItemCanonicalProduct);
@@ -160,14 +162,9 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
         setEditingItemId(null);
         setSelectedCanonicalProductId(null);
       })
-      .catch((error: Error) => {
+      .catch((_error: Error) => {
         toast.error("Failed to update canonical product assignment");
       });
-  };
-
-  const handleCancelEdit = () => {
-    setEditingItemId(null);
-    setSelectedCanonicalProductId(null);
   };
 
   const formatDate = (timestamp?: number) => {

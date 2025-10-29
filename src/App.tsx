@@ -9,7 +9,6 @@ import { api } from "../convex/_generated/api";
 import { SignInForm } from "./SignInForm";
 import { SignOutButton } from "./SignOutButton";
 import { Management } from "./Management";
-import { MonthNavigation } from "./MonthNavigation";
 import { CanonicalProductsPage } from "./CanonicalProductsPage";
 import { Toaster, toast } from "sonner";
 import { useState } from "react";
@@ -121,11 +120,6 @@ function InvoiceManager() {
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth() + 1); // 1-12
   const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
-
-  const handleMonthChange = (month: number, year: number) => {
-    setSelectedMonth(month);
-    setSelectedYear(year);
-  };
 
   const invoices = useQuery(api.nfce.listInvoices) || [];
   const addInvoice = useMutation(api.nfce.addInvoiceLink);
@@ -587,15 +581,4 @@ interface Invoice {
   issuer?: string;
   total_amount?: number;
   total_amount_str?: string;
-}
-
-interface BulkImportResult {
-  successCount: number;
-  errorCount: number;
-  results: Array<{
-    ok: boolean;
-    id?: Id<"nfce_links">;
-    url?: string;
-    error?: string;
-  }>;
 }
