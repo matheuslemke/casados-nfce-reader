@@ -76,7 +76,7 @@ export function CanonicalProductsPage({ onBack }: CanonicalProductsPageProps) {
 
   const handleCreateProduct = () => {
     if (!newProductName.trim()) {
-      toast.error("Product name is required");
+      toast.error("Nome do produto é obrigatório");
       return;
     }
 
@@ -86,19 +86,19 @@ export function CanonicalProductsPage({ onBack }: CanonicalProductsPageProps) {
       unitDetail: newProductUnitDetail.trim() || undefined,
     })
       .then(() => {
-        toast.success("Product created successfully");
+        toast.success("Produto criado com sucesso");
         setNewProductName("");
         setNewProductUnit("UNIT");
         setNewProductUnitDetail("");
         setViewMode("list");
       })
       .catch((error) => {
-        toast.error(`Failed to create product: ${error.message}`);
+        toast.error(`Falha ao criar produto: ${error.message}`);
       });
   };
 
   const formatDate = (timestamp?: number) => {
-    if (!timestamp) return "N/A";
+    if (!timestamp) return "N/D";
     return new Date(timestamp).toLocaleDateString("pt-BR", {
       day: "2-digit",
       month: "2-digit",
@@ -112,16 +112,16 @@ export function CanonicalProductsPage({ onBack }: CanonicalProductsPageProps) {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Create Canonical Product</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Criar Produto Canônico</h1>
             <p className="text-sm md:text-base text-gray-600 mt-1">
-              Add a new canonical product to standardize item classification
+              Adicione um novo produto canônico para padronizar a classificação de itens
             </p>
           </div>
           <button
             onClick={() => setViewMode("list")}
             className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
           >
-            ← Back to Products
+            ← Voltar aos Produtos
           </button>
         </div>
 
@@ -130,40 +130,40 @@ export function CanonicalProductsPage({ onBack }: CanonicalProductsPageProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Product Name *
+                Nome do Produto *
               </label>
               <input
                 type="text"
                 value={newProductName}
                 onChange={(e) => setNewProductName(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., Ground Beef, Eggs, Milk"
+                placeholder="ex: Carne Moída, Ovos, Leite"
               />
             </div>
 
             <div>
                <label className="block text-sm font-medium text-gray-700 mb-2">
-                 Unit *
+                 Unidade *
                </label>
                <input
                  type="text"
                  value={newProductUnit}
                  onChange={(e) => setNewProductUnit(e.target.value)}
                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                 placeholder="e.g., KG, UNIT, BOX, PACK, L, ML"
+                 placeholder="ex: KG, UNIDADE, CAIXA, PACOTE, L, ML"
                />
              </div>
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Unit Details (Optional)
+                Detalhes da Unidade (Opcional)
               </label>
               <input
                 type="text"
                 value={newProductUnitDetail}
                 onChange={(e) => setNewProductUnitDetail(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., 500g package, 12-pack, etc."
+                placeholder="ex: embalagem 500g, pacote com 12, etc."
               />
             </div>
           </div>
@@ -173,13 +173,13 @@ export function CanonicalProductsPage({ onBack }: CanonicalProductsPageProps) {
               onClick={handleCreateProduct}
               className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
-              Create Product
+              Criar Produto
             </button>
             <button
               onClick={() => setViewMode("list")}
               className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
             >
-              Cancel
+              Cancelar
             </button>
           </div>
         </div>
@@ -192,9 +192,9 @@ export function CanonicalProductsPage({ onBack }: CanonicalProductsPageProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Canonical Products</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Produtos Canônicos</h1>
           <p className="text-sm md:text-base text-gray-600 mt-1">
-            Manage standardized product definitions for invoice item classification
+            Gerencie definições padronizadas de produtos para classificação de itens de nota fiscal
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
@@ -202,13 +202,13 @@ export function CanonicalProductsPage({ onBack }: CanonicalProductsPageProps) {
             onClick={() => setViewMode("create")}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
-            + Add Product
+            + Adicionar Produto
           </button>
           <button
             onClick={onBack}
             className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
           >
-            ← Back
+            ← Voltar
           </button>
         </div>
       </div>
@@ -220,7 +220,7 @@ export function CanonicalProductsPage({ onBack }: CanonicalProductsPageProps) {
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="Search products..."
+                placeholder="Buscar produtos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -240,7 +240,7 @@ export function CanonicalProductsPage({ onBack }: CanonicalProductsPageProps) {
                   className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort("baseName")}
                 >
-                  Product Name
+                  Nome do Produto
                   {sortField === "baseName" && (
                     <span className="ml-1">
                       {sortDirection === "asc" ? "↑" : "↓"}
@@ -251,7 +251,7 @@ export function CanonicalProductsPage({ onBack }: CanonicalProductsPageProps) {
                   className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 hidden sm:table-cell"
                   onClick={() => handleSort("unit")}
                 >
-                  Unit
+                  Unidade
                   {sortField === "unit" && (
                     <span className="ml-1">
                       {sortDirection === "asc" ? "↑" : "↓"}
@@ -259,13 +259,13 @@ export function CanonicalProductsPage({ onBack }: CanonicalProductsPageProps) {
                   )}
                 </th>
                 <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                  Unit Details
+                  Detalhes da Unidade
                 </th>
                 <th
                   className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 hidden lg:table-cell"
                   onClick={() => handleSort("createdAt")}
                 >
-                  Created
+                  Criado
                   {sortField === "createdAt" && (
                     <span className="ml-1">
                       {sortDirection === "asc" ? "↑" : "↓"}
@@ -303,14 +303,14 @@ export function CanonicalProductsPage({ onBack }: CanonicalProductsPageProps) {
         {filteredProducts.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-500">
-              {searchTerm ? "No products found matching your search." : "No canonical products yet."}
+              {searchTerm ? "Nenhum produto encontrado para sua busca." : "Nenhum produto canônico ainda."}
             </p>
             {!searchTerm && (
               <button
                 onClick={() => setViewMode("create")}
                 className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
-                Create your first product
+                Criar seu primeiro produto
               </button>
             )}
           </div>

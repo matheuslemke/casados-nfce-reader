@@ -79,25 +79,25 @@ export function Management() {
   const handleSyncItems = async () => {
     try {
       const result = await syncItems({ reprocessAll: false });
-      toast.success(`Synced: ${result.inserted} inserted, ${result.deleted} deleted`);
+      toast.success(`Sincronizado: ${result.inserted} inseridos, ${result.deleted} excluídos`);
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Failed to sync items");
+      toast.error(error instanceof Error ? error.message : "Falha ao sincronizar itens");
     }
   };
 
   const handleClassifyBatch = async () => {
     try {
       const result = await classifyBatch({ batchSize: 200 });
-      toast.success(`Classified: ${result.classified}/${result.processed} items`);
+      toast.success(`Classificados: ${result.classified}/${result.processed} itens`);
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Failed to classify batch");
+      toast.error(error instanceof Error ? error.message : "Falha ao classificar lote");
     }
   };
 
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h1 className="text-3xl font-bold mb-6">Classification & Pricing Management</h1>
+        <h1 className="text-3xl font-bold mb-6">Gerenciamento de Classificação e Preços</h1>
         
         <div className="flex flex-wrap gap-2 mb-6">
           <button
@@ -106,7 +106,7 @@ export function Management() {
             }}
             className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900 transition-colors"
           >
-            Sync Items
+            Sincronizar Itens
           </button>
           <button
             onClick={() => {
@@ -114,48 +114,47 @@ export function Management() {
             }}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
           >
-            Classify Batch
+            Classificar Lote
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Unclassified Summary */}
           <div className="border rounded-lg p-4 bg-gray-50">
-            <h3 className="text-lg font-semibold mb-3">Unclassified Items</h3>
+            <h3 className="text-lg font-semibold mb-3">Itens Não Classificados</h3>
             <div className="text-sm space-y-2">
               <div>
                 <strong>Total: {unclassifiedSummary.count}</strong>
               </div>
               <div>
-                <strong>Top Issuers</strong>
-                {unclassifiedSummary.byIssuer.map((issuer: IssuerSummary) => (
-                  <div key={issuer.issuer} className="flex justify-between">
-                    <span>{issuer.issuer}</span>
-                    <span>{issuer.count}</span>
-                  </div>
-                ))}
+                <strong>Principais Emissores</strong>
+                <ul className="ml-4 mt-1">
+                  {unclassifiedSummary.byIssuer.slice(0, 5).map((issuer) => (
+                    <li key={issuer.issuer}>
+                      {issuer.issuer}: {issuer.count}
+                    </li>
+                  ))}
+                </ul>
               </div>
               <div>
-                <strong>Common Units</strong>
-                {unclassifiedSummary.commonUnits.map((unit: UnitSummary) => (
-                  <span
-                    key={unit.unit}
-                    className="inline-block bg-gray-200 px-2 py-1 rounded text-xs mr-1 mb-1"
-                  >
-                    {unit.unit} ({unit.count})
-                  </span>
-                ))}
+                <strong>Unidades Comuns</strong>
+                <ul className="ml-4 mt-1">
+                  {unclassifiedSummary.commonUnits.slice(0, 5).map((unit) => (
+                    <li key={unit.unit}>
+                      {unit.unit}: {unit.count}
+                    </li>
+                  ))}
+                </ul>
               </div>
               <div>
-                <strong>Common Tokens</strong>
-                {unclassifiedSummary.commonTokens.map((token: TokenSummary) => (
-                  <span
-                    key={token.token}
-                    className="inline-block bg-blue-100 px-2 py-1 rounded text-xs mr-1 mb-1"
-                  >
-                    {token.token} ({token.count})
-                  </span>
-                ))}
+                <strong>Tokens Comuns</strong>
+                <ul className="ml-4 mt-1">
+                  {unclassifiedSummary.commonTokens.slice(0, 10).map((token) => (
+                    <li key={token.token}>
+                      {token.token}: {token.count}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </div>
@@ -170,7 +169,7 @@ export function Management() {
               value={selectedProductForCompare}
               onChange={(e) => setSelectedProductForCompare(e.target.value)}
             >
-              <option value="">Select product</option>
+              <option value="">Selecionar produto</option>
               {products.map((p: CanonicalProduct) => (
                 <option key={p._id} value={p._id}>
                   {p.baseName} ({p.unit}
@@ -180,7 +179,7 @@ export function Management() {
             </select>
             <input
               className="px-3 py-2 border rounded text-sm"
-              placeholder="Unit (exact, e.g., KG/UNIT/BOX/PACK or raw)"
+              placeholder="Unidade (exata, ex: KG/UNIDADE/CAIXA/PACOTE ou bruta)"
               value={selectedUnitForCompare}
               onChange={(e) => setSelectedUnitForCompare(e.target.value)}
             />
@@ -190,9 +189,9 @@ export function Management() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left">
-                    <th className="p-2">Store</th>
-                    <th className="p-2">Avg Price</th>
-                    <th className="p-2">Sample Size</th>
+                    <th className="p-2">Loja</th>
+                    <th className="p-2">Preço Médio</th>
+                    <th className="p-2">Tamanho da Amostra</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -216,7 +215,7 @@ export function Management() {
 
         {/* Invoice Items Table Section */}
         <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h3 className="text-lg font-semibold mb-4">Invoice Items</h3>
+          <h3 className="text-lg font-semibold mb-4">Itens da Nota Fiscal</h3>
           
           {/* Month Navigation */}
           <MonthNavigation

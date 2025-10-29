@@ -31,7 +31,7 @@ export default function App() {
                   : "text-gray-600 hover:text-blue-600"
               }`}
             >
-              Home
+              Início
             </button>
             <button
               onClick={() => setCurrentScreen("management")}
@@ -41,7 +41,7 @@ export default function App() {
                   : "text-gray-600 hover:text-blue-600"
               }`}
             >
-              Management
+              Gerenciamento
             </button>
             <button
               onClick={() => setCurrentScreen("products")}
@@ -51,7 +51,7 @@ export default function App() {
                   : "text-gray-600 hover:text-blue-600"
               }`}
             >
-              Products
+              Produtos
             </button>
           </nav>
         </div>
@@ -101,7 +101,7 @@ function Content({
             NFC-e Web Crawler
           </h1>
           <p className="text-xl text-secondary mb-8">
-            Sign in to manage your invoices
+            Faça login para gerenciar suas notas fiscais
           </p>
           <div className="max-w-md mx-auto">
             <SignInForm />
@@ -141,18 +141,18 @@ function InvoiceManager() {
       if (newId) {
         setSelectedInvoice(newId as Id<"nfce_links">);
       }
-      toast.success("Invoice link added successfully");
+      toast.success("Link da nota fiscal adicionado com sucesso");
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Failed to add invoice");
+      toast.error(error instanceof Error ? error.message : "Falha ao adicionar nota fiscal");
     }
   };
 
   const handleRunCrawler = async () => {
     try {
       const result = await runCrawler({});
-      toast.success(`Crawler completed: ${result.count} processed`);
+      toast.success(`Crawler concluído: ${result.count} processados`);
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Failed to run crawler");
+      toast.error(error instanceof Error ? error.message : "Falha ao executar crawler");
     }
   };
 
@@ -160,7 +160,7 @@ function InvoiceManager() {
     e.preventDefault();
     const raw = bulkInput.trim();
     if (!raw) {
-      toast.error("No URLs found. Paste tab-separated links.");
+      toast.error("Nenhuma URL encontrada. Cole links separados por TAB.");
       return;
     }
     // Split by tabs or newlines, trim, drop empties, strip quotes/backticks
@@ -178,7 +178,7 @@ function InvoiceManager() {
       }
     }
     if (urls.length === 0) {
-      toast.error("No valid URLs after parsing.");
+      toast.error("Nenhuma URL válida após análise.");
       return;
     }
 
@@ -210,8 +210,8 @@ function InvoiceManager() {
         );
       }
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Bulk import failed");
-    }
+        toast.error(error instanceof Error ? error.message : "Importação em lote falhou");
+      }
   };
 
   const handleDelete = async (invoiceId: Id<"nfce_links">) => {
@@ -220,9 +220,9 @@ function InvoiceManager() {
       if (selectedInvoice === invoiceId) {
         setSelectedInvoice(null);
       }
-      toast.success("Invoice deleted");
+      toast.success("Nota fiscal excluída");
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete invoice");
+      toast.error(error instanceof Error ? error.message : "Falha ao excluir nota fiscal");
     }
   };
 
@@ -294,7 +294,7 @@ function InvoiceManager() {
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-2xl font-bold mb-4">Add NFC-e Invoice</h2>
+        <h2 className="text-2xl font-bold mb-4">Adicionar Nota Fiscal NFC-e</h2>
         <form
           onSubmit={(e) => {
             void handleAddInvoice(e);
@@ -313,7 +313,7 @@ function InvoiceManager() {
             type="submit"
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Add
+            Adicionar
           </button>
         </form>
         <form
@@ -323,23 +323,23 @@ function InvoiceManager() {
           className="mt-4 border-t pt-4 space-y-2"
         >
           <label className="block text-sm text-gray-700 font-medium">
-            Bulk import (paste tab-separated links)
+            Importação em lote (cole links separados por TAB)
           </label>
           <textarea
             value={bulkInput}
             onChange={(e) => setBulkInput(e.target.value)}
-            placeholder={"url1\turl2\turl3 or one per line"}
+            placeholder={"url1\turl2\turl3 ou uma por linha"}
             className="w-full h-28 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500">
-              Format: links separated by TABs or new lines
+              Formato: links separados por TABs ou novas linhas
             </span>
             <button
               type="submit"
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Import
+              Importar
             </button>
           </div>
         </form>
@@ -348,35 +348,35 @@ function InvoiceManager() {
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
           <h2 className="text-2xl font-bold">
-            Invoices ({sortedInvoices.length})
+            Notas Fiscais ({sortedInvoices.length})
           </h2>
           <div className="flex flex-wrap items-center gap-2">
-            <label className="text-sm text-gray-600">Month</label>
+            <label className="text-sm text-gray-600">Mês</label>
             <select
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(parseInt(e.target.value, 10))}
             >
               {[
-                "January",
-                "February",
-                "March",
-                "April",
-                "May",
-                "June",
-                "July",
-                "August",
-                "September",
-                "October",
-                "November",
-                "December",
+                "Janeiro",
+                "Fevereiro",
+                "Março",
+                "Abril",
+                "Maio",
+                "Junho",
+                "Julho",
+                "Agosto",
+                "Setembro",
+                "Outubro",
+                "Novembro",
+                "Dezembro",
               ].map((m, idx) => (
                 <option key={idx} value={idx + 1}>
                   {m}
                 </option>
               ))}
             </select>
-            <label className="text-sm text-gray-600">Year</label>
+            <label className="text-sm text-gray-600">Ano</label>
             <select
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
               value={selectedYear}
@@ -395,13 +395,13 @@ function InvoiceManager() {
               disabled={pendingCount === 0}
               className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Process Pending ({pendingCount})
+              Processar Pendentes ({pendingCount})
             </button>
           </div>
         </div>
 
         <div className="mb-4 text-sm">
-          <span className="font-medium">Total for {currentMonthLabel}:</span>{" "}
+          <span className="font-medium">Total para {currentMonthLabel}:</span>{" "}
           {new Intl.NumberFormat("pt-BR", {
             style: "currency",
             currency: "BRL",
@@ -412,7 +412,7 @@ function InvoiceManager() {
           <div className="space-y-2 max-h-[600px] overflow-y-auto">
             {sortedInvoices.length === 0 ? (
               <p className="text-gray-500 text-center py-8">
-                No invoices yet. Add one above!
+                Nenhuma nota fiscal ainda. Adicione uma acima!
               </p>
             ) : (
               sortedInvoices.map((invoice) => (
@@ -455,7 +455,7 @@ function InvoiceManager() {
                       }}
                       className="text-red-600 hover:text-red-800 text-sm"
                     >
-                      Delete
+                      Excluir
                     </button>
                   </div>
                   <div className="mb-2 text-sm text-gray-700">
@@ -480,7 +480,7 @@ function InvoiceManager() {
           <div className="border rounded-lg p-4 bg-gray-50">
             {selectedInvoiceData ? (
               <div>
-                <h3 className="text-lg font-semibold mb-4">Invoice Details</h3>
+                <h3 className="text-lg font-semibold mb-4">Detalhes da Nota Fiscal</h3>
                 <div className="space-y-2 mb-4">
                   <p className="text-sm">
                     <span className="font-medium">Status:</span>{" "}
@@ -504,7 +504,7 @@ function InvoiceManager() {
                   </p>
                   {selectedInvoiceData.issuer && (
                     <p className="text-sm">
-                      <span className="font-medium">Issuer:</span>{" "}
+                      <span className="font-medium">Emissor:</span>{" "}
                       {selectedInvoiceData.issuer}
                     </p>
                   )}
@@ -534,7 +534,7 @@ function InvoiceManager() {
                   selectedInvoiceData.extracted_data.length > 0 && (
                     <div>
                       <h4 className="font-medium mb-2">
-                        Extracted Items (
+                        Itens Extraídos (
                         {selectedInvoiceData.extracted_data.length})
                       </h4>
                       <div className="space-y-2 max-h-[400px] overflow-y-auto">
@@ -546,9 +546,9 @@ function InvoiceManager() {
                             <p className="font-medium text-sm">{item.name}</p>
                             <div className="grid grid-cols-2 gap-2 mt-2 text-xs text-gray-600">
                               <p>
-                                Qty: {item.quantity} {item.unit}
+                                Qtd: {item.quantity} {item.unit}
                               </p>
-                              <p>Unit: {item.unit_price}</p>
+                              <p>Unitário: {item.unit_price}</p>
                               <p className="col-span-2 font-medium">
                                 Total: {item.total_price}
                               </p>
@@ -561,7 +561,7 @@ function InvoiceManager() {
               </div>
             ) : (
               <p className="text-gray-500 text-center py-8">
-                Select an invoice to view details
+                Selecione uma nota fiscal para ver os detalhes
               </p>
             )}
           </div>

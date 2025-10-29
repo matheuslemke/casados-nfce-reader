@@ -158,17 +158,17 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
       canonicalProductId: selectedCanonicalProductId || undefined,
     })
       .then(() => {
-        toast.success("Canonical product updated successfully");
+        toast.success("Produto canônico atualizado com sucesso");
         setEditingItemId(null);
         setSelectedCanonicalProductId(null);
       })
       .catch((_error: Error) => {
-        toast.error("Failed to update canonical product assignment");
+        toast.error("Falha ao atualizar a atribuição do produto canônico");
       });
   };
 
   const formatDate = (timestamp?: number) => {
-    if (!timestamp) return "N/A";
+    if (!timestamp) return "N/D";
     return new Date(timestamp).toLocaleDateString("pt-BR");
   };
 
@@ -179,7 +179,7 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
         currency: "BRL",
       }).format(value);
     }
-    return fallback || "N/A";
+    return fallback || "N/D";
   };
 
   if (filteredAndSortedItems.length === 0) {
@@ -191,23 +191,23 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
             {/* Search Field */}
             <div>
               <label htmlFor="search-items" className="block text-sm font-medium text-gray-700 mb-2">
-                Search Items
+                Buscar Itens
               </label>
               <input
                 id="search-items"
                 type="text"
-                placeholder="Search by item name, issuer, or canonical product..."
+                placeholder="Buscar por nome do item, emissor ou produto canônico..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                aria-label="Search invoice items"
+                aria-label="Buscar itens da nota fiscal"
               />
             </div>
 
             {/* Filter Type */}
             <div>
               <label htmlFor="filter-type" className="block text-sm font-medium text-gray-700 mb-2">
-                Classification Filter
+                Filtro de Classificação
               </label>
               <select
                 id="filter-type"
@@ -215,28 +215,28 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                 onChange={(e) => setFilterType(e.target.value as FilterType)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="all">All Items</option>
-                <option value="unassigned">Unassigned Only</option>
-                <option value="assigned">Assigned Only</option>
+                <option value="all">Todos os Itens</option>
+                <option value="unassigned">Apenas Não Atribuídos</option>
+                <option value="assigned">Apenas Atribuídos</option>
               </select>
             </div>
 
             {/* Statistics */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Statistics
+                Estatísticas
               </label>
               <div className="text-sm text-gray-600 space-y-1">
-                <div>Total: {statistics.total} items</div>
-                <div>Unassigned: <span className="text-red-600 font-medium">{statistics.unassigned}</span></div>
-                <div>Total Value: {formatCurrency(statistics.totalValue)}</div>
+                <div>Total: {statistics.total} itens</div>
+                <div>Não atribuídos: <span className="text-red-600 font-medium">{statistics.unassigned}</span></div>
+                <div>Valor Total: {formatCurrency(statistics.totalValue)}</div>
               </div>
             </div>
           </div>
         </div>
         
         <div className="text-center py-8 text-gray-500 bg-white rounded-lg shadow-sm border border-gray-200">
-          <p>{searchTerm.trim() || filterType !== "all" ? "No items found matching your criteria." : "No invoice items found for the selected period."}</p>
+          <p>{searchTerm.trim() || filterType !== "all" ? "Nenhum item encontrado que corresponda aos seus critérios." : "Nenhum item de nota fiscal encontrado para o período selecionado."}</p>
         </div>
       </div>
     );
@@ -250,23 +250,23 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
           {/* Search Field */}
           <div>
             <label htmlFor="search-items" className="block text-sm font-medium text-gray-700 mb-2">
-              Search Items
+              Buscar Itens
             </label>
             <input
               id="search-items"
               type="text"
-              placeholder="Search by item name, issuer, or canonical product..."
+              placeholder="Buscar por nome do item, emissor ou produto canônico..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              aria-label="Search invoice items"
+              aria-label="Buscar itens da nota fiscal"
             />
           </div>
 
           {/* Filter Type */}
           <div>
             <label htmlFor="filter-type" className="block text-sm font-medium text-gray-700 mb-2">
-              Classification Filter
+              Filtro de Classificação
             </label>
             <select
               id="filter-type"
@@ -274,21 +274,21 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
               onChange={(e) => setFilterType(e.target.value as FilterType)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="all">All Items</option>
-              <option value="unassigned">Unassigned Only</option>
-              <option value="assigned">Assigned Only</option>
+              <option value="all">Todos os Itens</option>
+              <option value="unassigned">Apenas Não Atribuídos</option>
+              <option value="assigned">Apenas Atribuídos</option>
             </select>
           </div>
 
           {/* Statistics */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Statistics
+              Estatísticas
             </label>
             <div className="text-sm text-gray-600 space-y-1">
-              <div>Total: {statistics.total} items</div>
-              <div>Unassigned: <span className="text-red-600 font-medium">{statistics.unassigned}</span></div>
-              <div>Total Value: {formatCurrency(statistics.totalValue)}</div>
+              <div>Total: {statistics.total} itens</div>
+              <div>Não atribuídos: <span className="text-red-600 font-medium">{statistics.unassigned}</span></div>
+              <div>Valor Total: {formatCurrency(statistics.totalValue)}</div>
             </div>
           </div>
         </div>
@@ -304,7 +304,7 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                 onClick={() => handleSort("date")}
                 role="button"
                 tabIndex={0}
-                aria-label={`Sort by invoice date ${sortField === "date" ? (sortDirection === "asc" ? "descending" : "ascending") : "ascending"}`}
+                aria-label={`Ordenar por data da nota fiscal ${sortField === "date" ? (sortDirection === "asc" ? "decrescente" : "crescente") : "crescente"}`}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
@@ -313,7 +313,7 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                 }}
               >
                 <div className="flex items-center justify-between">
-                  <span>Invoice Date</span>
+                  <span>Data da Nota</span>
                   {getSortIcon("date")}
                 </div>
               </th>
@@ -322,7 +322,7 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                 onClick={() => handleSort("issuer")}
                 role="button"
                 tabIndex={0}
-                aria-label={`Sort by issuer ${sortField === "issuer" ? (sortDirection === "asc" ? "descending" : "ascending") : "ascending"}`}
+                aria-label={`Ordenar por emissor ${sortField === "issuer" ? (sortDirection === "asc" ? "decrescente" : "crescente") : "crescente"}`}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
@@ -331,7 +331,7 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                 }}
               >
                 <div className="flex items-center justify-between">
-                  <span>Issuer</span>
+                  <span>Emissor</span>
                   {getSortIcon("issuer")}
                 </div>
               </th>
@@ -340,7 +340,7 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                 onClick={() => handleSort("name")}
                 role="button"
                 tabIndex={0}
-                aria-label={`Sort by item name ${sortField === "name" ? (sortDirection === "asc" ? "descending" : "ascending") : "ascending"}`}
+                aria-label={`Ordenar por nome do item ${sortField === "name" ? (sortDirection === "asc" ? "decrescente" : "crescente") : "crescente"}`}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
@@ -349,22 +349,22 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                 }}
               >
                 <div className="flex items-center justify-between">
-                  <span>Item Name</span>
+                  <span>Nome do Item</span>
                   {getSortIcon("name")}
                 </div>
               </th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b-2 border-gray-200">
-                <span>Quantity</span>
+                <span>Quantidade</span>
               </th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b-2 border-gray-200">
-                <span>Unit Price</span>
+                <span>Preço Unitário</span>
               </th>
               <th 
                 className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b-2 border-gray-200 cursor-pointer hover:bg-gray-200 select-none transition-colors duration-200"
                 onClick={() => handleSort("totalPrice")}
                 role="button"
                 tabIndex={0}
-                aria-label={`Sort by total price ${sortField === "totalPrice" ? (sortDirection === "asc" ? "descending" : "ascending") : "ascending"}`}
+                aria-label={`Ordenar por preço total ${sortField === "totalPrice" ? (sortDirection === "asc" ? "decrescente" : "crescente") : "crescente"}`}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
@@ -373,7 +373,7 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                 }}
               >
                 <div className="flex items-center justify-between">
-                  <span>Item Total</span>
+                  <span>Total do Item</span>
                   {getSortIcon("totalPrice")}
                 </div>
               </th>
@@ -382,7 +382,7 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                 onClick={() => handleSort("classification")}
                 role="button"
                 tabIndex={0}
-                aria-label={`Sort by classification ${sortField === "classification" ? (sortDirection === "asc" ? "descending" : "ascending") : "ascending"}`}
+                aria-label={`Ordenar por classificação ${sortField === "classification" ? (sortDirection === "asc" ? "decrescente" : "crescente") : "crescente"}`}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
@@ -391,18 +391,18 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                 }}
               >
                 <div className="flex items-center justify-between">
-                  <span>Classification</span>
+                  <span>Classificação</span>
                   {getSortIcon("classification")}
                 </div>
               </th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b-2 border-gray-200">
-                <span>Canonical Product</span>
+                <span>Produto Canônico</span>
               </th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b-2 border-gray-200">
-                <span>Product Unit</span>
+                <span>Unidade do Produto</span>
               </th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b-2 border-gray-200">
-                <span>Actions</span>
+                <span>Ações</span>
               </th>
             </tr>
           </thead>
@@ -415,16 +415,16 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                     {formatDate(item.invoiceDate)}
                   </span>
                   <span className="text-xs text-gray-500 mt-1">
-                    Invoice #{item.invoiceId?.toString().slice(-8)}
+                    Nota #{item.invoiceId?.toString().slice(-8)}
                   </span>
                 </div>
               </td>
               <td className="px-6 py-5 text-sm border-b border-gray-100">
                 <div className="flex flex-col">
-                  <div className="max-w-32 truncate font-semibold text-gray-800" title={item.invoiceIssuer || "N/A"}>
-                    {item.invoiceIssuer || "N/A"}
+                  <div className="max-w-32 truncate font-semibold text-gray-800" title={item.invoiceIssuer || "N/D"}>
+                    {item.invoiceIssuer || "N/D"}
                   </div>
-                  <span className="text-xs text-gray-500 mt-1">Store</span>
+                  <span className="text-xs text-gray-500 mt-1">Loja</span>
                 </div>
               </td>
               <td className="px-6 py-5 text-sm border-b border-gray-100">
@@ -432,7 +432,7 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                   <div className="max-w-72 font-bold text-gray-900 leading-tight" title={item.name}>
                     {item.name}
                   </div>
-                  <span className="text-xs text-gray-500 mt-1">Product</span>
+                  <span className="text-xs text-gray-500 mt-1">Produto</span>
                 </div>
               </td>
               <td className="px-6 py-5 text-sm border-b border-gray-100">
@@ -441,7 +441,7 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                     <span className="font-bold text-lg text-gray-900">{item.quantity}</span>
                     <span className="text-sm text-gray-600 font-medium">{item.unit}</span>
                   </div>
-                  <span className="text-xs text-gray-500 mt-1">Qty</span>
+                  <span className="text-xs text-gray-500 mt-1">Qtd</span>
                 </div>
               </td>
               <td className="px-6 py-5 text-sm border-b border-gray-100">
@@ -449,7 +449,7 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                   <span className="font-bold text-gray-900">
                     {formatCurrency(item.numericUnitPrice, item.unit_price)}
                   </span>
-                  <span className="text-xs text-gray-500 mt-1">Per unit</span>
+                  <span className="text-xs text-gray-500 mt-1">Por unidade</span>
                 </div>
               </td>
               <td className="px-6 py-5 text-sm border-b border-gray-100">
@@ -467,7 +467,7 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                       ? 'bg-green-100 text-green-800' 
                       : 'bg-red-100 text-red-800'
                   }`}>
-                    {item.canonicalProductId ? 'Assigned' : 'Unassigned'}
+                    {item.canonicalProductId ? 'Atribuído' : 'Não Atribuído'}
                   </span>
                   <span className="text-xs text-gray-500 mt-1">Status</span>
                 </div>
@@ -480,7 +480,7 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                       onChange={(e) => setSelectedCanonicalProductId(e.target.value as Id<"canonicalProducts"> || null)}
                       className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value="">No canonical product</option>
+                      <option value="">Nenhum produto canônico</option>
                       {canonicalProducts.map((product) => (
                         <option key={product._id} value={product._id}>
                           {product.baseName} ({product.unit})
@@ -492,13 +492,13 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                         onClick={() => handleSaveCanonicalProduct()}
                         className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                       >
-                        Save
+                        Salvar
                       </button>
                       <button
                         onClick={() => setEditingItemId(null)}
                         className="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400"
                       >
-                        Cancel
+                        Cancelar
                       </button>
                     </div>
                   </div>
@@ -510,11 +510,11 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                           {item.canonicalProduct.baseName}
                         </span>
                         <span className="text-xs text-gray-500">
-                          Assigned
+                          Atribuído
                         </span>
                       </div>
                     ) : (
-                      <span className="text-gray-400 italic">Not assigned</span>
+                      <span className="text-gray-400 italic">Não atribuído</span>
                     )}
                   </div>
                 )}
@@ -534,7 +534,7 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
                     onClick={() => handleEditCanonicalProduct(item._id, item.canonicalProductId)}
                     className="text-blue-600 hover:text-blue-800 text-sm font-medium focus:outline-none focus:underline"
                   >
-                    {item.canonicalProduct ? "Change" : "Assign"}
+                    {item.canonicalProduct ? "Alterar" : "Atribuir"}
                   </button>
                 )}
               </td>

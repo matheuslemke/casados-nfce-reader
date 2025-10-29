@@ -5,8 +5,8 @@ interface MonthNavigationProps {
 }
 
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ];
 
 export function MonthNavigation({ selectedMonth, selectedYear, onMonthChange }: MonthNavigationProps) {
@@ -41,7 +41,7 @@ export function MonthNavigation({ selectedMonth, selectedYear, onMonthChange }: 
   return (
     <div className="bg-white shadow-sm border border-gray-200 rounded-lg p-4 mb-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Month Navigation</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Navegação por Mês</h2>
         
         <div className="flex items-center space-x-4">
           {/* Navigation Arrows */}
@@ -49,7 +49,7 @@ export function MonthNavigation({ selectedMonth, selectedYear, onMonthChange }: 
             <button
               onClick={handlePreviousMonth}
               className="p-2 rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
-              aria-label="Previous month"
+              aria-label="Mês anterior"
             >
               <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -64,7 +64,7 @@ export function MonthNavigation({ selectedMonth, selectedYear, onMonthChange }: 
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                   : 'hover:bg-gray-50 text-gray-600'
               }`}
-              aria-label="Next month"
+              aria-label="Próximo mês"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -75,7 +75,7 @@ export function MonthNavigation({ selectedMonth, selectedYear, onMonthChange }: 
           {/* Month Selector */}
           <div className="flex items-center space-x-2">
             <label htmlFor="month-select" className="text-sm font-medium text-gray-700">
-              Month:
+              Mês:
             </label>
             <select
               id="month-select"
@@ -94,7 +94,7 @@ export function MonthNavigation({ selectedMonth, selectedYear, onMonthChange }: 
           {/* Year Selector */}
           <div className="flex items-center space-x-2">
             <label htmlFor="year-select" className="text-sm font-medium text-gray-700">
-              Year:
+              Ano:
             </label>
             <select
               id="year-select"

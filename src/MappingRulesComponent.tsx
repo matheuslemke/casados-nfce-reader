@@ -39,14 +39,14 @@ export function MappingRulesComponent() {
 
   return (
     <div className="border rounded-lg p-4 bg-gray-50">
-      <h3 className="text-lg font-semibold mb-3">Mapping Rules</h3>
+      <h3 className="text-lg font-semibold mb-3">Regras de Mapeamento</h3>
       <div className="space-y-2 mb-3">
         <select
           className="px-3 py-2 border rounded w-full text-sm"
           value={newRuleTarget}
           onChange={(e) => setNewRuleTarget(e.target.value)}
         >
-          <option value="">Select canonical product</option>
+          <option value="">Selecionar produto canônico</option>
           {products.map((p: CanonicalProduct) => (
             <option key={p._id} value={p._id}>
               {p.baseName} ({p.unit})
@@ -56,7 +56,7 @@ export function MappingRulesComponent() {
         <div className="flex gap-2">
           <input
             className="flex-1 px-3 py-2 border rounded text-sm"
-            placeholder="Pattern (token/phrase or regex)"
+            placeholder="Padrão (token/frase ou regex)"
             value={newRulePattern}
             onChange={(e) => setNewRulePattern(e.target.value)}
           />
@@ -65,21 +65,21 @@ export function MappingRulesComponent() {
             value={newRuleMatchType}
             onChange={(e) => setNewRuleMatchType(e.target.value as MatchType)}
           >
-            <option value="exact">exact</option>
-            <option value="contains">contains</option>
+            <option value="exact">exato</option>
+            <option value="contains">contém</option>
             <option value="regex">regex</option>
           </select>
         </div>
         <input
           className="px-3 py-2 border rounded w-full text-sm"
-          placeholder="Unit synonyms (comma-separated)"
+          placeholder="Sinônimos de unidade (separados por vírgula)"
           value={newRuleUnitSynonyms}
           onChange={(e) => setNewRuleUnitSynonyms(e.target.value)}
         />
         <button
           onClick={() => {
             if (!newRuleTarget || !newRulePattern) {
-              toast.error("Select product and enter a pattern");
+              toast.error("Selecione um produto e insira um padrão");
               return;
             }
             const p = addRule({
@@ -98,29 +98,29 @@ export function MappingRulesComponent() {
               .then(() => {
                 setNewRulePattern("");
                 setNewRuleUnitSynonyms("");
-                toast.success("Rule added");
+                toast.success("Regra adicionada");
               })
               .catch((error: unknown) => {
-                toast.error(error instanceof Error ? error.message : "Failed to add rule");
+                toast.error(error instanceof Error ? error.message : "Falha ao adicionar regra");
               });
           }}
           className="px-4 py-2 bg-blue-600 text-white rounded w-full hover:bg-blue-700 transition-colors"
         >
-          Add Rule
+          Adicionar Regra
         </button>
       </div>
       <div className="max-h-64 overflow-y-auto">
         {rules.length === 0 ? (
-          <p className="text-sm text-gray-500">No rules yet.</p>
+          <p className="text-sm text-gray-500">Nenhuma regra ainda.</p>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left">
-                <th className="p-2">Pattern</th>
-                <th className="p-2">Type</th>
-                <th className="p-2">Product</th>
-                <th className="p-2">Active</th>
-                <th className="p-2">Actions</th>
+                <th className="p-2">Padrão</th>
+                <th className="p-2">Tipo</th>
+                <th className="p-2">Produto</th>
+                <th className="p-2">Ativo</th>
+                <th className="p-2">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -145,12 +145,12 @@ export function MappingRulesComponent() {
                         });
                           void p.catch((error: unknown) => {
                             toast.error(
-                              error instanceof Error ? error.message : "Failed to update"
+                              error instanceof Error ? error.message : "Falha ao atualizar"
                             );
                           });
                         }}
                       />
-                      <span>active</span>
+                      <span>ativo</span>
                     </label>
                   </td>
                   <td className="p-2">
@@ -160,16 +160,16 @@ export function MappingRulesComponent() {
                         const p = deleteRule({ ruleId: r._id });
                         void p
                           .then(() => {
-                            toast.success("Rule deleted");
+                            toast.success("Regra excluída");
                           })
                           .catch((error: unknown) => {
                             toast.error(
-                              error instanceof Error ? error.message : "Failed to delete"
+                              error instanceof Error ? error.message : "Falha ao excluir"
                             );
                           });
                       }}
                     >
-                      Delete
+                      Excluir
                     </button>
                   </td>
                 </tr>
