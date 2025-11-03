@@ -264,29 +264,33 @@ function InvoiceManager() {
     return at - bt;
   });
 
-  // Calculate current month total across all invoices regardless of status
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  // Calculate selected month total across all invoices regardless of status
+  // Ensure selectedMonth and selectedYear are valid numbers
+  const validSelectedMonth = typeof selectedMonth === "number" && selectedMonth >= 1 && selectedMonth <= 12 ? selectedMonth : now.getMonth() + 1;
+  const validSelectedYear = typeof selectedYear === "number" && selectedYear > 0 ? selectedYear : now.getFullYear();
+  
+  const startOfMonth = new Date(validSelectedYear, validSelectedMonth - 1, 1).getTime();
   const startOfNextMonth = new Date(
-    now.getFullYear(),
-    now.getMonth() + 1,
+    validSelectedYear,
+    validSelectedMonth,
     1
   ).getTime();
-  const currentMonthInvoices = (invoices as Invoice[]).filter(
+  const selectedMonthInvoices = (invoices as Invoice[]).filter(
     (inv) =>
       typeof inv.emission_ts === "number" &&
       inv.emission_ts >= startOfMonth &&
       inv.emission_ts < startOfNextMonth
   );
-  const currentMonthTotal = currentMonthInvoices.reduce(
+  const selectedMonthTotal = selectedMonthInvoices.reduce(
     (sum: number, inv) =>
       sum + (typeof inv.total_amount === "number" ? inv.total_amount : 0),
     0
   );
-  const currentMonthLabel = new Date(
-    now.getFullYear(),
-    now.getMonth(),
+  const selectedMonthLabel = new Date(
+    validSelectedYear,
+    validSelectedMonth - 1,
     1
-  ).toLocaleDateString("en-US", {
+  ).toLocaleDateString("pt-BR", {
     month: "long",
     year: "numeric",
   });
@@ -401,11 +405,11 @@ function InvoiceManager() {
         </div>
 
         <div className="mb-4 text-sm">
-          <span className="font-medium">Total para {currentMonthLabel}:</span>{" "}
+          <span className="font-medium">Total para {selectedMonthLabel}:</span>{" "}
           {new Intl.NumberFormat("pt-BR", {
             style: "currency",
             currency: "BRL",
-          }).format(currentMonthTotal)}
+          }).format(selectedMonthTotal)}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
