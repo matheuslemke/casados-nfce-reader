@@ -421,7 +421,7 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
               </td>
               <td className="px-6 py-5 text-sm border-b border-gray-100">
                 <div className="flex flex-col">
-                  <div className="max-w-32 truncate font-semibold text-gray-800" title={item.invoiceIssuer || "N/D"}>
+                  <div className="truncate font-semibold text-gray-800" title={item.invoiceIssuer || "N/D"}>
                     {item.invoiceIssuer || "N/D"}
                   </div>
                   <span className="text-xs text-gray-500 mt-1">Loja</span>
@@ -429,7 +429,7 @@ export function InvoiceItemsTable({ selectedMonth, selectedYear }: InvoiceItemsT
               </td>
               <td className="px-6 py-5 text-sm border-b border-gray-100">
                 <div className="flex flex-col">
-                  <div className="max-w-72 font-bold text-gray-900 leading-tight" title={item.name}>
+                  <div className="font-bold text-gray-900 leading-tight" title={item.name}>
                     {item.name}
                   </div>
                   <span className="text-xs text-gray-500 mt-1">Produto</span>

@@ -95,7 +95,7 @@ export function Management() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="w-full">
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h1 className="text-3xl font-bold mb-6">Gerenciamento de Classificação e Preços</h1>
         

@@ -57,8 +57,8 @@ export default function App() {
         </div>
         <SignOutButton />
       </header>
-      <main className="flex-1 p-8">
-        <div className="w-full max-w-6xl mx-auto">
+      <main className="flex-1">
+        <div className="w-full">
           <Content currentScreen={currentScreen} setCurrentScreen={setCurrentScreen} />
         </div>
       </main>
