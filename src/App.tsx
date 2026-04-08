@@ -298,8 +298,11 @@ function InvoiceManager() {
     return month === validSelectedMonth && year === validSelectedYear;
   });
   const selectedMonthTotal = selectedMonthInvoices.reduce(
-    (sum: number, inv) =>
-      sum + (typeof inv.total_amount === "number" ? inv.total_amount : 0),
+    (sum: number, inv) => {
+      const amount = typeof inv.total_amount === "number" ? inv.total_amount : 0;
+      const disc = typeof inv.discount === "number" ? inv.discount : 0;
+      return sum + amount - disc;
+    },
     0
   );
   const selectedMonthLabel = new Date(
@@ -461,6 +464,16 @@ function InvoiceManager() {
                         }).format(invoice.total_amount || 0)}
                     </p>
                   )}
+                  {(invoice.discount_str || invoice.discount !== undefined) && (
+                    <p className="text-sm text-gray-700">
+                      <span className="font-medium">Desconto:</span>{" "}
+                      {invoice.discount_str ??
+                        new Intl.NumberFormat("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        }).format(invoice.discount || 0)}
+                    </p>
+                  )}
                   {editingOverrideId === invoice._id ? (
                     <div
                       className="mt-2 flex items-center gap-2 flex-wrap"
@@ -559,6 +572,17 @@ function InvoiceManager() {
                         }).format(selectedInvoiceData.total_amount || 0)}
                     </p>
                   )}
+                  {(selectedInvoiceData.discount_str ||
+                    selectedInvoiceData.discount !== undefined) && (
+                    <p className="text-sm">
+                      <span className="font-medium">Desconto:</span>{" "}
+                      {selectedInvoiceData.discount_str ??
+                        new Intl.NumberFormat("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        }).format(selectedInvoiceData.discount || 0)}
+                    </p>
+                  )}
                 </div>
 
                 {selectedInvoiceData.error_message && (
@@ -621,6 +645,8 @@ interface Invoice {
   issuer?: string;
   total_amount?: number;
   total_amount_str?: string;
+  discount?: number;
+  discount_str?: string;
   override_month?: number;
   override_year?: number;
 }

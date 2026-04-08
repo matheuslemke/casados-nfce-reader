@@ -176,6 +176,33 @@ export const scrapeOne = internalAction({
           emissionTs = parseBrDateTime(emissionStr);
         }
       }
+      let discountStr: string | null = null;
+      let discount: number | null = null;
+
+      $("label").each((_, labelEl) => {
+        const labelText = $(labelEl).text().replace(/\u00A0/g, " ").trim();
+        if (/Descontos\s+R\$\s*:/i.test(labelText)) {
+          const sibling = $(labelEl).next(".totalNumb");
+          if (sibling.length > 0) {
+            const raw = sibling.text().replace(/\u00A0/g, " ").trim();
+            if (raw) {
+              discountStr = raw;
+              discount = parseBrNumber(raw);
+            }
+          }
+          return false; // stop after first match
+        }
+      });
+
+      if (discount === null) {
+        const allText = $("body").text().replace(/\u00A0/g, " ");
+        const m = allText.match(/Descontos\s+R\$\s*:?\s*([\d.,]+)/i);
+        if (m?.[1]) {
+          discountStr = m[1].trim();
+          discount = parseBrNumber(discountStr);
+        }
+      }
+
       const items: Array<{
         name: string;
         quantity: string;
@@ -293,6 +320,8 @@ export const scrapeOne = internalAction({
           emission_str: emissionStr ?? undefined,
           total_amount: totalAmount,
           total_amount_str: totalAmountStr,
+          discount: discount ?? undefined,
+          discount_str: discount !== null ? formatBrCurrency(discount) : undefined,
           issuer: issuer ?? undefined,
           extracted_data: items,
         });

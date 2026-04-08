@@ -18,6 +18,8 @@ const applicationTables = {
     // Calculated total invoice amount
     total_amount: v.optional(v.number()), // Sum of item totals in BRL
     total_amount_str: v.optional(v.string()), // Formatted string, e.g., "R$ 1.234,56"
+    discount: v.optional(v.number()), // Discount amount in BRL (Descontos)
+    discount_str: v.optional(v.string()), // Formatted string, e.g., "R$ 1,50"
     issuer: v.optional(v.string()), // Invoice issuer / store name
     override_month: v.optional(v.number()), // 1–12, overrides emission month for calculations
     override_year: v.optional(v.number()), // e.g. 2025

@@ -170,6 +170,8 @@ export const updateInvoiceStatus = internalMutation({
     emission_str: v.optional(v.string()),
     total_amount: v.optional(v.number()),
     total_amount_str: v.optional(v.string()),
+    discount: v.optional(v.number()),
+    discount_str: v.optional(v.string()),
     issuer: v.optional(v.string()),
     extracted_data: v.optional(
       v.array(
@@ -192,6 +194,8 @@ export const updateInvoiceStatus = internalMutation({
       emission_str: args.emission_str,
       total_amount: args.total_amount,
       total_amount_str: args.total_amount_str,
+      discount: args.discount,
+      discount_str: args.discount_str,
       issuer: args.issuer,
       extracted_data: args.extracted_data,
       error_message: args.error_message,
