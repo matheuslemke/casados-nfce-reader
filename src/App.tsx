@@ -315,14 +315,18 @@ function InvoiceManager() {
     const { month, year } = effectiveMonthYear(inv);
     return month === validSelectedMonth && year === validSelectedYear;
   });
-  const selectedMonthTotal = selectedMonthInvoices.reduce(
-    (sum: number, inv) => {
-      const amount = typeof inv.total_amount === "number" ? inv.total_amount : 0;
-      const disc = typeof inv.discount === "number" ? inv.discount : 0;
-      return sum + amount - disc;
-    },
-    0
-  );
+  const selectedMonthTotal = selectedMonthInvoices
+    .filter((inv) =>
+      defaultCategory ? inv.categoryId === defaultCategory._id : !inv.categoryId
+    )
+    .reduce(
+      (sum: number, inv) => {
+        const amount = typeof inv.total_amount === "number" ? inv.total_amount : 0;
+        const disc = typeof inv.discount === "number" ? inv.discount : 0;
+        return sum + amount - disc;
+      },
+      0
+    );
   const selectedMonthLabel = new Date(
     validSelectedYear,
     validSelectedMonth - 1,
@@ -425,7 +429,7 @@ function InvoiceManager() {
         </div>
 
         <div className="mb-4 text-sm">
-          <span className="font-medium">Total para {selectedMonthLabel}:</span>{" "}
+          <span className="font-medium">Total de {defaultCategory?.name ?? "padrão"} para {selectedMonthLabel}:</span>{" "}
           {new Intl.NumberFormat("pt-BR", {
             style: "currency",
             currency: "BRL",
