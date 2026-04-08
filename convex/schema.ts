@@ -16,7 +16,7 @@ const applicationTables = {
       v.literal("pending"),
       v.literal("processing"),
       v.literal("done"),
-      v.literal("error")
+      v.literal("error"),
     ),
     last_run: v.optional(v.number()),
     // New fields for invoice issue date (Emissão)
@@ -38,8 +38,8 @@ const applicationTables = {
           unit: v.string(),
           unit_price: v.string(),
           total_price: v.string(),
-        })
-      )
+        }),
+      ),
     ),
     error_message: v.optional(v.string()),
     categoryId: v.optional(v.id("categories")),
@@ -55,8 +55,7 @@ const applicationTables = {
     unitDetail: v.optional(v.string()), // e.g., "Box of 30", "500g tray"
     createdAt: v.number(),
     updatedAt: v.number(),
-  })
-    .index("by_base_unit", ["baseName", "unit"]),
+  }).index("by_base_unit", ["baseName", "unit"]),
 
   // Mapping rules used to classify raw item descriptions into canonical products
   mappingRules: defineTable({
@@ -64,7 +63,7 @@ const applicationTables = {
     matchType: v.union(
       v.literal("exact"),
       v.literal("contains"),
-      v.literal("regex")
+      v.literal("regex"),
     ),
     targetProductId: v.id("canonicalProducts"),
     unitSynonyms: v.optional(v.array(v.string())), // e.g., ["L", "Liter"]
@@ -101,7 +100,7 @@ const applicationTables = {
     canonicalProductId: v.optional(v.id("canonicalProducts")),
     classificationStatus: v.union(
       v.literal("CLASSIFIED"),
-      v.literal("UNCLASSIFIED")
+      v.literal("UNCLASSIFIED"),
     ),
     classificationDate: v.optional(v.number()),
 
@@ -109,11 +108,13 @@ const applicationTables = {
     updatedAt: v.number(),
   })
     .index("by_user", ["userId"])
+    .index("by_user_link", ["userId", "linkId"])
     .index("by_product", ["canonicalProductId"])
     .index("by_unit", ["unit"])
     .index("by_issuer", ["issuer"])
-    .index("by_emission_ts", ["emission_ts"]) 
-    .index("by_status", ["classificationStatus"]),
+    .index("by_emission_ts", ["emission_ts"])
+    .index("by_status", ["classificationStatus"])
+    .index("by_status_user", ["classificationStatus", "userId"]),
 
   // Logs for classification attempts that failed, to aid manual rule creation
   classificationLogs: defineTable({

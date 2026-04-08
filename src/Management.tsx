@@ -44,8 +44,11 @@ interface StoreComparison {
 export function Management() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedProductForCompare, setSelectedProductForCompare] = useState("");
+  const [selectedProductForCompare, setSelectedProductForCompare] =
+    useState("");
   const [selectedUnitForCompare, setSelectedUnitForCompare] = useState("");
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [classifyLoading, setClassifyLoading] = useState(false);
 
   const handleMonthChange = (month: number, year: number) => {
     setSelectedMonth(month);
@@ -55,16 +58,20 @@ export function Management() {
   // Classification & rule management
   const syncItems = useMutation(api.classify.syncInvoiceItemsFromInvoices);
   const classifyBatch = useMutation(api.classify.classifyItems);
-  const unclassifiedSummary: UnclassifiedSummary = useQuery(api.classify.getUnclassifiedSummary, {
-    month: selectedMonth,
-    year: selectedYear,
-  }) || {
+  const unclassifiedSummary: UnclassifiedSummary = useQuery(
+    api.classify.getUnclassifiedSummary,
+    {
+      month: selectedMonth,
+      year: selectedYear,
+    },
+  ) || {
     count: 0,
     byIssuer: [],
     commonUnits: [],
     commonTokens: [],
   };
-  const products: CanonicalProduct[] = useQuery(api.catalog.listCanonicalProducts) || [];
+  const products: CanonicalProduct[] =
+    useQuery(api.catalog.listCanonicalProducts) || [];
   const storeCompare: StoreComparison[] | undefined = useQuery(
     api.pricing.compareStorePrices,
     selectedProductForCompare && selectedUnitForCompare
@@ -73,61 +80,98 @@ export function Management() {
             selectedProductForCompare as unknown as Id<"canonicalProducts">,
           unit: selectedUnitForCompare,
         }
-      : "skip"
+      : "skip",
   );
 
   const handleSyncItems = async () => {
+    setSyncLoading(true);
     try {
-      const result = await syncItems({ reprocessAll: false });
-      toast.success(`Sincronizado: ${result.inserted} inseridos, ${result.deleted} excluídos`);
+      let cursor: string | null = null;
+      let totalInserted = 0;
+      let totalDeleted = 0;
+      do {
+        const result = await syncItems({
+          reprocessAll: false,
+          cursor: cursor ?? undefined,
+        });
+        totalInserted += result.inserted;
+        totalDeleted += result.deleted;
+        cursor = result.continueCursor;
+      } while (cursor);
+      toast.success(
+        `Sincronizado: ${totalInserted} inseridos, ${totalDeleted} excluídos`,
+      );
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Falha ao sincronizar itens");
+      toast.error(
+        error instanceof Error ? error.message : "Falha ao sincronizar itens",
+      );
+    } finally {
+      setSyncLoading(false);
     }
   };
 
   const handleClassifyBatch = async () => {
+    setClassifyLoading(true);
     try {
       const result = await classifyBatch({ batchSize: 200 });
-      toast.success(`Classificados: ${result.classified}/${result.processed} itens`);
+      toast.success(
+        `Classificados: ${result.classified}/${result.processed} itens`,
+      );
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Falha ao classificar lote");
+      toast.error(
+        error instanceof Error ? error.message : "Falha ao classificar lote",
+      );
+    } finally {
+      setClassifyLoading(false);
     }
   };
 
   return (
     <div className="w-full">
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h1 className="text-3xl font-bold mb-6">Gerenciamento e classificação</h1>
+        <h1 className="text-3xl font-bold mb-6">
+          Gerenciamento e classificação
+        </h1>
 
         <MonthNavigation
-            selectedMonth={selectedMonth}
-            selectedYear={selectedYear}
-            onMonthChange={handleMonthChange}
-          />
-        
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+          onMonthChange={handleMonthChange}
+        />
+
         <div className="flex flex-wrap gap-2 mb-6">
           <button
             onClick={() => {
               void handleSyncItems();
             }}
-            className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900 transition-colors"
+            className={`px-4 py-2 text-white rounded transition-colors ${
+              syncLoading
+                ? "bg-gray-400 cursor-wait"
+                : "bg-gray-800 hover:bg-gray-900"
+            }`}
           >
-            Sincronizar Itens
+            {syncLoading ? "Sincronizando..." : "Sincronizar Itens"}
           </button>
           <button
             onClick={() => {
               void handleClassifyBatch();
             }}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            className={`px-4 py-2 text-white rounded transition-colors ${
+              classifyLoading
+                ? "bg-blue-400 cursor-wait"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
           >
-            Classificar Lote
+            {classifyLoading ? "Classificando..." : "Classificar Lote"}
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Unclassified Summary */}
           <div className="border rounded-lg p-4 bg-gray-50">
-            <h3 className="text-lg font-semibold mb-3">Itens Não Classificados</h3>
+            <h3 className="text-lg font-semibold mb-3">
+              Itens Não Classificados
+            </h3>
             <div className="text-sm space-y-2">
               <div>
                 <strong>Total: {unclassifiedSummary.count}</strong>
@@ -155,11 +199,13 @@ export function Management() {
               <div>
                 <strong>Tokens Comuns</strong>
                 <ul className="ml-4 mt-1">
-                  {unclassifiedSummary.commonTokens.slice(0, 10).map((token) => (
-                    <li key={token.token}>
-                      {token.token}: {token.count}
-                    </li>
-                  ))}
+                  {unclassifiedSummary.commonTokens
+                    .slice(0, 10)
+                    .map((token) => (
+                      <li key={token.token}>
+                        {token.token}: {token.count}
+                      </li>
+                    ))}
                 </ul>
               </div>
             </div>
@@ -224,7 +270,7 @@ export function Management() {
           <h3 className="text-lg font-semibold mb-4">Itens da Nota Fiscal</h3>
 
           {/* Invoice Items Table */}
-          <InvoiceItemsTable 
+          <InvoiceItemsTable
             selectedMonth={selectedMonth}
             selectedYear={selectedYear}
           />

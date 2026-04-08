@@ -1,33 +1,36 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { api } from "./_generated/api";
 import { parseBrNumber, safeLower, nowMs } from "./lib/parse";
 import { effectiveMonth, effectiveYear } from "./lib/month";
 import { Id } from "./_generated/dataModel";
 
 // Sync flattened invoice items from nfce_links into invoiceItems table
 export const syncInvoiceItemsFromInvoices = mutation({
-  args: { reprocessAll: v.optional(v.boolean()) },
+  args: {
+    reprocessAll: v.optional(v.boolean()),
+    cursor: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    // Collect all invoices for this user
-    const invoices = await ctx.db
+    const page = await ctx.db
       .query("nfce_links")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .collect();
+      .paginate({ numItems: 50, cursor: args.cursor ?? null });
 
     let inserted = 0;
     let deleted = 0;
-    for (const inv of invoices) {
-      // If reprocessAll or invoice is done, we refresh its items
+
+    for (const inv of page.page) {
       if (args.reprocessAll || inv.status === "done") {
-        // Delete existing items for this invoice
         const existing = await ctx.db
           .query("invoiceItems")
-          .withIndex("by_user", (q) => q.eq("userId", userId))
-          .filter((q) => q.eq(q.field("linkId"), inv._id))
+          .withIndex("by_user_link", (q) =>
+            q.eq("userId", userId).eq("linkId", inv._id),
+          )
           .collect();
         for (const ex of existing) {
           await ctx.db.delete(ex._id);
@@ -62,7 +65,34 @@ export const syncInvoiceItemsFromInvoices = mutation({
         }
       }
     }
-    return { inserted, deleted };
+
+    return { inserted, deleted, continueCursor: page.continueCursor };
+  },
+});
+
+// Internal function that loops until all invoices are processed
+export const syncInvoiceItemsFromInvoicesInternal = internalMutation({
+  args: { reprocessAll: v.optional(v.boolean()) },
+  handler: async (ctx, args) => {
+    let totalInserted = 0;
+    let totalDeleted = 0;
+    let cursor: string | undefined = undefined;
+
+    do {
+      const result: {
+        inserted: number;
+        deleted: number;
+        continueCursor: string | null;
+      } = await ctx.runMutation(api.classify.syncInvoiceItemsFromInvoices, {
+        reprocessAll: args.reprocessAll,
+        cursor,
+      });
+      totalInserted += result.inserted;
+      totalDeleted += result.deleted;
+      cursor = result.continueCursor ?? undefined;
+    } while (cursor);
+
+    return { inserted: totalInserted, deleted: totalDeleted };
   },
 });
 
@@ -115,10 +145,9 @@ export const classifyItems = mutation({
     // Pull unclassified items for this user
     const unclassified = await ctx.db
       .query("invoiceItems")
-      .withIndex("by_status", (q) =>
-        q.eq("classificationStatus", "UNCLASSIFIED")
+      .withIndex("by_status_user", (q) =>
+        q.eq("classificationStatus", "UNCLASSIFIED").eq("userId", userId),
       )
-      .filter((q) => q.eq(q.field("userId"), userId))
       .take(batchSize);
 
     let classified = 0;
@@ -185,10 +214,9 @@ export const getUnclassifiedSummary = query({
 
     let items = await ctx.db
       .query("invoiceItems")
-      .withIndex("by_status", (q) =>
-        q.eq("classificationStatus", "UNCLASSIFIED")
+      .withIndex("by_status_user", (q) =>
+        q.eq("classificationStatus", "UNCLASSIFIED").eq("userId", userId),
       )
-      .filter((q) => q.eq(q.field("userId"), userId))
       .collect();
 
     // Filter by month and year if provided
