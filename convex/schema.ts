@@ -19,6 +19,8 @@ const applicationTables = {
     total_amount: v.optional(v.number()), // Sum of item totals in BRL
     total_amount_str: v.optional(v.string()), // Formatted string, e.g., "R$ 1.234,56"
     issuer: v.optional(v.string()), // Invoice issuer / store name
+    override_month: v.optional(v.number()), // 1–12, overrides emission month for calculations
+    override_year: v.optional(v.number()), // e.g. 2025
     extracted_data: v.optional(
       v.array(
         v.object({
@@ -69,6 +71,8 @@ const applicationTables = {
     linkId: v.id("nfce_links"),
     userId: v.id("users"),
     emission_ts: v.optional(v.number()),
+    override_month: v.optional(v.number()),
+    override_year: v.optional(v.number()),
     issuer: v.optional(v.string()),
 
     // Raw scraped fields (kept for traceability)

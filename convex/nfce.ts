@@ -200,6 +200,53 @@ export const updateInvoiceStatus = internalMutation({
   },
 });
 
+export const setMonthOverride = mutation({
+  args: {
+    invoiceId: v.id("nfce_links"),
+    override_month: v.optional(v.number()),
+    override_year: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const invoice = await ctx.db.get(args.invoiceId);
+    if (!invoice || invoice.userId !== userId) {
+      throw new Error("Invoice not found");
+    }
+
+    const hasMonth = args.override_month !== undefined;
+    const hasYear = args.override_year !== undefined;
+    if (hasMonth !== hasYear) {
+      throw new Error("override_month and override_year must be set together");
+    }
+    if (hasMonth && (args.override_month! < 1 || args.override_month! > 12)) {
+      throw new Error("override_month must be between 1 and 12");
+    }
+
+    await ctx.db.patch(args.invoiceId, {
+      override_month: args.override_month,
+      override_year: args.override_year,
+    });
+
+    // Propagate to all existing invoiceItems for this invoice
+    const items = await ctx.db
+      .query("invoiceItems")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .filter((q) => q.eq(q.field("linkId"), args.invoiceId))
+      .collect();
+
+    for (const item of items) {
+      await ctx.db.patch(item._id, {
+        override_month: args.override_month,
+        override_year: args.override_year,
+      });
+    }
+
+    return { updated: items.length };
+  },
+});
+
 export const getPendingInvoices = query({
   args: {},
   handler: async (ctx) => {

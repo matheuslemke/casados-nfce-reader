@@ -19,6 +19,7 @@ import type * as classify from "../classify.js";
 import type * as crons from "../crons.js";
 import type * as http from "../http.js";
 import type * as invoiceItems from "../invoiceItems.js";
+import type * as lib_month from "../lib/month.js";
 import type * as lib_parse from "../lib/parse.js";
 import type * as nfce from "../nfce.js";
 import type * as nfceInternal from "../nfceInternal.js";
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   http: typeof http;
   invoiceItems: typeof invoiceItems;
+  "lib/month": typeof lib_month;
   "lib/parse": typeof lib_parse;
   nfce: typeof nfce;
   nfceInternal: typeof nfceInternal;

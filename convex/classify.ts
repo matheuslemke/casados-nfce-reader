@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { parseBrNumber, safeLower, nowMs } from "./lib/parse";
+import { effectiveMonth, effectiveYear } from "./lib/month";
 import { Id } from "./_generated/dataModel";
 
 // Sync flattened invoice items from nfce_links into invoiceItems table
@@ -40,6 +41,8 @@ export const syncInvoiceItemsFromInvoices = mutation({
             linkId: inv._id,
             userId,
             emission_ts: inv.emission_ts,
+            override_month: inv.override_month,
+            override_year: inv.override_year,
             issuer: inv.issuer,
             name: it.name,
             quantity: it.quantity,
@@ -191,9 +194,10 @@ export const getUnclassifiedSummary = query({
     // Filter by month and year if provided
     if (args.month && args.year) {
       items = items.filter((item) => {
-        if (!item.emission_ts) return false;
-        const date = new Date(item.emission_ts);
-        return date.getMonth() + 1 === args.month && date.getFullYear() === args.year;
+        const em = effectiveMonth(item.override_month, item.emission_ts);
+        const ey = effectiveYear(item.override_year, item.emission_ts);
+        if (em === null || ey === null) return false;
+        return em === args.month && ey === args.year;
       });
     }
 

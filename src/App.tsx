@@ -122,10 +122,15 @@ function InvoiceManager() {
   const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth() + 1); // 1-12
   const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
 
+  const [editingOverrideId, setEditingOverrideId] = useState<Id<"nfce_links"> | null>(null);
+  const [overrideMonthInput, setOverrideMonthInput] = useState<number>(1);
+  const [overrideYearInput, setOverrideYearInput] = useState<number>(now.getFullYear());
+
   const invoices = useQuery(api.nfce.listInvoices) || [];
   const addInvoice = useMutation(api.nfce.addInvoiceLink);
   const addInvoiceBulk = useMutation(api.nfce.addInvoiceLinksBulk);
   const deleteInvoice = useMutation(api.nfce.deleteInvoice);
+  const setMonthOverride = useMutation(api.nfce.setMonthOverride);
   const runCrawler = useAction(api.scraper.runCrawler);
   const selectedInvoiceData = useQuery(
     api.nfce.getInvoiceById,
@@ -227,18 +232,37 @@ function InvoiceManager() {
     }
   };
 
+  const handleSetOverride = async (
+    invoiceId: Id<"nfce_links">,
+    month?: number,
+    year?: number
+  ) => {
+    try {
+      await setMonthOverride({ invoiceId, override_month: month, override_year: year });
+      toast.success(
+        month !== undefined
+          ? `Nota redirecionada para ${month}/${year}`
+          : "Redirecionamento removido"
+      );
+      setEditingOverrideId(null);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Falha ao mudar mês");
+    }
+  };
+
   const pendingCount = invoices.filter(
     (inv) => inv.status === "pending"
   ).length;
 
-  // Build available years from invoices with emission_ts
+  // Build available years from invoices (including override years)
   const yearsAvailable = Array.from(
     new Set(
-      (invoices as Invoice[])
-        .map((inv) =>
-          inv.emission_ts ? new Date(inv.emission_ts).getFullYear() : null
-        )
-        .filter((y: number | null): y is number => y !== null)
+      (invoices as Invoice[]).flatMap((inv) => {
+        const years: number[] = [];
+        if (inv.emission_ts) years.push(new Date(inv.emission_ts).getFullYear());
+        if (inv.override_year !== undefined) years.push(inv.override_year);
+        return years;
+      })
     )
   ).sort((a, b) => b - a);
   if (yearsAvailable.length === 0 || !yearsAvailable.includes(selectedYear)) {
@@ -248,9 +272,9 @@ function InvoiceManager() {
   }
 
   const filteredInvoices = (invoices as Invoice[]).filter((inv) => {
-    if (!inv.emission_ts) return true; // Always include undated invoices to avoid omissions
-    const d = new Date(inv.emission_ts);
-    return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear;
+    const { month, year } = effectiveMonthYear(inv);
+    if (month === null || year === null) return true; // Always include undated invoices
+    return month === selectedMonth && year === selectedYear;
   });
 
   const sortedInvoices = [...filteredInvoices].sort((a, b) => {
@@ -266,22 +290,13 @@ function InvoiceManager() {
   });
 
   // Calculate selected month total across all invoices regardless of status
-  // Ensure selectedMonth and selectedYear are valid numbers
   const validSelectedMonth = typeof selectedMonth === "number" && selectedMonth >= 1 && selectedMonth <= 12 ? selectedMonth : now.getMonth() + 1;
   const validSelectedYear = typeof selectedYear === "number" && selectedYear > 0 ? selectedYear : now.getFullYear();
-  
-  const startOfMonth = new Date(validSelectedYear, validSelectedMonth - 1, 1).getTime();
-  const startOfNextMonth = new Date(
-    validSelectedYear,
-    validSelectedMonth,
-    1
-  ).getTime();
-  const selectedMonthInvoices = (invoices as Invoice[]).filter(
-    (inv) =>
-      typeof inv.emission_ts === "number" &&
-      inv.emission_ts >= startOfMonth &&
-      inv.emission_ts < startOfNextMonth
-  );
+
+  const selectedMonthInvoices = (invoices as Invoice[]).filter((inv) => {
+    const { month, year } = effectiveMonthYear(inv);
+    return month === validSelectedMonth && year === validSelectedYear;
+  });
   const selectedMonthTotal = selectedMonthInvoices.reduce(
     (sum: number, inv) =>
       sum + (typeof inv.total_amount === "number" ? inv.total_amount : 0),
@@ -446,6 +461,57 @@ function InvoiceManager() {
                         }).format(invoice.total_amount || 0)}
                     </p>
                   )}
+                  {editingOverrideId === invoice._id ? (
+                    <div
+                      className="mt-2 flex items-center gap-2 flex-wrap"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <select
+                        value={overrideMonthInput}
+                        onChange={(e) => setOverrideMonthInput(Number(e.target.value))}
+                        className="text-xs border rounded px-1 py-0.5"
+                      >
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                          <option key={m} value={m}>
+                            {new Date(2000, m - 1, 1).toLocaleDateString("pt-BR", { month: "long" })}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        value={overrideYearInput}
+                        onChange={(e) => setOverrideYearInput(Number(e.target.value))}
+                        className="text-xs border rounded px-1 py-0.5 w-20"
+                        min={2020}
+                        max={2099}
+                      />
+                      <button
+                        onClick={() => void handleSetOverride(invoice._id, overrideMonthInput, overrideYearInput)}
+                        className="text-xs bg-purple-600 text-white px-2 py-0.5 rounded hover:bg-purple-700"
+                      >
+                        Salvar
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setEditingOverrideId(null); }}
+                        className="text-xs bg-gray-400 text-white px-2 py-0.5 rounded hover:bg-gray-500"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const { month, year } = effectiveMonthYear(invoice);
+                        setOverrideMonthInput(month ?? selectedMonth);
+                        setOverrideYearInput(year ?? selectedYear);
+                        setEditingOverrideId(invoice._id);
+                      }}
+                      className="mt-1 text-xs text-purple-600 hover:text-purple-800"
+                    >
+                      Mudar mês
+                    </button>
+                  )}
                 </div>
               ))
             )}
@@ -555,4 +621,15 @@ interface Invoice {
   issuer?: string;
   total_amount?: number;
   total_amount_str?: string;
+  override_month?: number;
+  override_year?: number;
+}
+
+function effectiveMonthYear(inv: Invoice): { month: number | null; year: number | null } {
+  if (inv.override_month !== undefined && inv.override_year !== undefined) {
+    return { month: inv.override_month, year: inv.override_year };
+  }
+  if (!inv.emission_ts) return { month: null, year: null };
+  const d = new Date(inv.emission_ts);
+  return { month: d.getMonth() + 1, year: d.getFullYear() };
 }

@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id, Doc } from "./_generated/dataModel";
+import { effectiveMonth, effectiveYear } from "./lib/month";
 
 // Define the return type for invoice items with details
 export type InvoiceItemWithDetails = {
@@ -62,11 +63,10 @@ export const listInvoiceItemsWithDetails = query({
     let filteredItems = invoiceItems;
     if (args.month !== undefined && args.year !== undefined) {
       filteredItems = invoiceItems.filter((item) => {
-        if (!item.emission_ts) return false;
-        const date = new Date(item.emission_ts);
-        return (
-          date.getMonth() + 1 === args.month && date.getFullYear() === args.year
-        );
+        const em = effectiveMonth(item.override_month, item.emission_ts);
+        const ey = effectiveYear(item.override_year, item.emission_ts);
+        if (em === null || ey === null) return false;
+        return em === args.month && ey === args.year;
       });
     }
 
