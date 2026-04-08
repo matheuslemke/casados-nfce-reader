@@ -10,13 +10,14 @@ import { SignInForm } from "./SignInForm";
 import { SignOutButton } from "./SignOutButton";
 import { Management } from "./Management";
 import { CanonicalProductsPage } from "./CanonicalProductsPage";
+import { Categories } from "./Categories";
 import { MonthNavigation } from "./MonthNavigation";
 import { Toaster, toast } from "sonner";
 import { useState } from "react";
 import { Id } from "../convex/_generated/dataModel";
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<"home" | "management" | "products">("home");
+  const [currentScreen, setCurrentScreen] = useState<"home" | "categories" | "management" | "products">("home");
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -33,6 +34,16 @@ export default function App() {
               }`}
             >
               Início
+            </button>
+            <button
+              onClick={() => setCurrentScreen("categories")}
+              className={`px-3 py-1 rounded transition-colors ${
+                currentScreen === "categories"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:text-blue-600"
+              }`}
+            >
+              Categorias
             </button>
             <button
               onClick={() => setCurrentScreen("management")}
@@ -68,12 +79,12 @@ export default function App() {
   );
 }
 
-function Content({ 
-  currentScreen, 
-  setCurrentScreen 
-}: { 
-  currentScreen: "home" | "management" | "products";
-  setCurrentScreen: (screen: "home" | "management" | "products") => void;
+function Content({
+  currentScreen,
+  setCurrentScreen
+}: {
+  currentScreen: "home" | "categories" | "management" | "products";
+  setCurrentScreen: (screen: "home" | "categories" | "management" | "products") => void;
 }) {
   const loggedInUser = useQuery(api.auth.loggedInUser);
 
@@ -90,6 +101,8 @@ function Content({
       <Authenticated>
         {currentScreen === "home" ? (
           <InvoiceManager />
+        ) : currentScreen === "categories" ? (
+          <Categories />
         ) : currentScreen === "management" ? (
           <Management />
         ) : (
@@ -116,6 +129,7 @@ function Content({
 function InvoiceManager() {
   const [url, setUrl] = useState("");
   const [bulkInput, setBulkInput] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<Id<"categories"> | "">("");
   const [selectedInvoice, setSelectedInvoice] =
     useState<Id<"nfce_links"> | null>(null);
   const now = new Date();
@@ -127,6 +141,8 @@ function InvoiceManager() {
   const [overrideYearInput, setOverrideYearInput] = useState<number>(now.getFullYear());
 
   const invoices = useQuery(api.nfce.listInvoices) || [];
+  const categories = useQuery(api.categories.listCategories) ?? [];
+  const defaultCategory = useQuery(api.categories.getDefaultCategory);
   const addInvoice = useMutation(api.nfce.addInvoiceLink);
   const addInvoiceBulk = useMutation(api.nfce.addInvoiceLinksBulk);
   const deleteInvoice = useMutation(api.nfce.deleteInvoice);
@@ -142,7 +158,8 @@ function InvoiceManager() {
     if (!url.trim()) return;
 
     try {
-      const newId = await addInvoice({ url: url.trim() });
+      const effectiveCategoryId = selectedCategoryId || defaultCategory?._id;
+      const newId = await addInvoice({ url: url.trim(), categoryId: effectiveCategoryId });
       setUrl("");
       if (newId) {
         setSelectedInvoice(newId as Id<"nfce_links">);
@@ -189,7 +206,8 @@ function InvoiceManager() {
     }
 
     try {
-      const result = await addInvoiceBulk({ urls });
+      const effectiveCategoryId = selectedCategoryId || defaultCategory?._id;
+      const result = await addInvoiceBulk({ urls, categoryId: effectiveCategoryId });
       const { successCount, errorCount, results } = result || {
         successCount: 0,
         errorCount: 0,
@@ -332,6 +350,20 @@ function InvoiceManager() {
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
+          <select
+            value={selectedCategoryId || defaultCategory?._id || ""}
+            onChange={(e) => setSelectedCategoryId(e.target.value as Id<"categories"> | "")}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          >
+            {categories.length === 0 && (
+              <option value="">Sem categoria</option>
+            )}
+            {categories.map((cat) => (
+              <option key={cat._id} value={cat._id}>
+                {cat.name}{cat.isDefault ? " (padrão)" : ""}
+              </option>
+            ))}
+          </select>
           <button
             type="submit"
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -450,8 +482,16 @@ function InvoiceManager() {
                       Excluir
                     </button>
                   </div>
-                  <div className="mb-2 text-sm text-gray-700">
-                    {invoice.issuer ?? "-"}
+                  <div className="mb-2 text-sm text-gray-700 flex items-center gap-2">
+                    <span>{invoice.issuer ?? "-"}</span>
+                    {invoice.categoryId && (() => {
+                      const cat = categories.find((c) => c._id === invoice.categoryId);
+                      return cat ? (
+                        <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">
+                          {cat.name}
+                        </span>
+                      ) : null;
+                    })()}
                   </div>
                   {(invoice.total_amount_str ||
                     invoice.total_amount !== undefined) && (
@@ -649,6 +689,7 @@ interface Invoice {
   discount_str?: string;
   override_month?: number;
   override_year?: number;
+  categoryId?: Id<"categories">;
 }
 
 function effectiveMonthYear(inv: Invoice): { month: number | null; year: number | null } {

@@ -3,6 +3,13 @@ import { v } from "convex/values";
 import { authTables } from "@convex-dev/auth/server";
 
 const applicationTables = {
+  categories: defineTable({
+    name: v.string(),
+    isDefault: v.boolean(),
+    userId: v.id("users"),
+    createdAt: v.number(),
+  }).index("by_user", ["userId"]),
+
   nfce_links: defineTable({
     url: v.string(),
     status: v.union(
@@ -35,6 +42,7 @@ const applicationTables = {
       )
     ),
     error_message: v.optional(v.string()),
+    categoryId: v.optional(v.id("categories")),
     userId: v.id("users"),
   })
     .index("by_user", ["userId"])

@@ -5,6 +5,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 export const addInvoiceLink = mutation({
   args: {
     url: v.string(),
+    categoryId: v.optional(v.id("categories")),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -21,6 +22,7 @@ export const addInvoiceLink = mutation({
       url: args.url,
       status: "pending",
       userId,
+      categoryId: args.categoryId,
     });
 
     return invoiceId;
@@ -30,6 +32,7 @@ export const addInvoiceLink = mutation({
 export const addInvoiceLinksBulk = mutation({
   args: {
     urls: v.array(v.string()),
+    categoryId: v.optional(v.id("categories")),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -64,6 +67,7 @@ export const addInvoiceLinksBulk = mutation({
         url,
         status: "pending",
         userId,
+        categoryId: args.categoryId,
       });
       results.push({ url, ok: true, id });
     }
