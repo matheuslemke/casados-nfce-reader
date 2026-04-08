@@ -10,6 +10,7 @@ import { SignInForm } from "./SignInForm";
 import { SignOutButton } from "./SignOutButton";
 import { Management } from "./Management";
 import { CanonicalProductsPage } from "./CanonicalProductsPage";
+import { MonthNavigation } from "./MonthNavigation";
 import { Toaster, toast } from "sonner";
 import { useState } from "react";
 import { Id } from "../convex/_generated/dataModel";
@@ -298,7 +299,7 @@ function InvoiceManager() {
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-2xl font-bold mb-4">Adicionar Nota Fiscal NFC-e</h2>
+        <h1 className="text-3xl font-bold mb-6">Adicionar Nota Fiscal</h1>
         <form
           onSubmit={(e) => {
             void handleAddInvoice(e);
@@ -349,49 +350,18 @@ function InvoiceManager() {
         </form>
       </div>
 
+      <MonthNavigation
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+        onMonthChange={(month, year) => { setSelectedMonth(month); setSelectedYear(year); }}
+      />
+
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
           <h2 className="text-2xl font-bold">
             Notas Fiscais ({sortedInvoices.length})
           </h2>
           <div className="flex flex-wrap items-center gap-2">
-            <label className="text-sm text-gray-600">Mês</label>
-            <select
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(parseInt(e.target.value, 10))}
-            >
-              {[
-                "Janeiro",
-                "Fevereiro",
-                "Março",
-                "Abril",
-                "Maio",
-                "Junho",
-                "Julho",
-                "Agosto",
-                "Setembro",
-                "Outubro",
-                "Novembro",
-                "Dezembro",
-              ].map((m, idx) => (
-                <option key={idx} value={idx + 1}>
-                  {m}
-                </option>
-              ))}
-            </select>
-            <label className="text-sm text-gray-600">Ano</label>
-            <select
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
-            >
-              {yearsAvailable.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
             <button
               onClick={() => {
                 void handleRunCrawler();

@@ -97,7 +97,13 @@ export function Management() {
   return (
     <div className="w-full">
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h1 className="text-3xl font-bold mb-6">Gerenciamento de Classificação e Preços</h1>
+        <h1 className="text-3xl font-bold mb-6">Gerenciamento e classificação</h1>
+
+        <MonthNavigation
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+            onMonthChange={handleMonthChange}
+          />
         
         <div className="flex flex-wrap gap-2 mb-6">
           <button
@@ -216,13 +222,6 @@ export function Management() {
         {/* Invoice Items Table Section */}
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <h3 className="text-lg font-semibold mb-4">Itens da Nota Fiscal</h3>
-          
-          {/* Month Navigation */}
-          <MonthNavigation
-            selectedMonth={selectedMonth}
-            selectedYear={selectedYear}
-            onMonthChange={handleMonthChange}
-          />
 
           {/* Invoice Items Table */}
           <InvoiceItemsTable 

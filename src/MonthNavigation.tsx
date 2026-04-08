@@ -1,26 +1,22 @@
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+
 interface MonthNavigationProps {
   selectedMonth: number;
   selectedYear: number;
   onMonthChange: (month: number, year: number) => void;
 }
 
-const MONTHS = [
-  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-];
-
 export function MonthNavigation({ selectedMonth, selectedYear, onMonthChange }: MonthNavigationProps) {
   const currentDate = new Date();
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
+  const selectedDate = new Date(selectedYear, selectedMonth - 1, 1);
 
-  // Generate year options (current year and 2 years back)
-  const yearOptions = [];
-  for (let year = currentYear; year >= currentYear - 2; year--) {
-    yearOptions.push(year);
-  }
+  const isNextDisabled =
+    selectedYear === currentDate.getFullYear() &&
+    selectedMonth >= currentDate.getMonth() + 1;
 
-  const handlePreviousMonth = () => {
+  const handlePrev = () => {
     if (selectedMonth === 1) {
       onMonthChange(12, selectedYear - 1);
     } else {
@@ -28,7 +24,7 @@ export function MonthNavigation({ selectedMonth, selectedYear, onMonthChange }: 
     }
   };
 
-  const handleNextMonth = () => {
+  const handleNext = () => {
     if (selectedMonth === 12) {
       onMonthChange(1, selectedYear + 1);
     } else {
@@ -36,88 +32,41 @@ export function MonthNavigation({ selectedMonth, selectedYear, onMonthChange }: 
     }
   };
 
-  const isNextDisabled = selectedYear === currentYear && selectedMonth >= currentMonth;
+  const handleMonthChange = (date: Date) => {
+    onMonthChange(date.getMonth() + 1, date.getFullYear());
+  };
 
   return (
-    <div className="bg-white shadow-sm border border-gray-200 rounded-lg p-4 mb-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Navegação por Mês</h2>
-        
-        <div className="flex items-center space-x-4">
-          {/* Navigation Arrows */}
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={handlePreviousMonth}
-              className="p-2 rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
-              aria-label="Mês anterior"
-            >
-              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            
-            <button
-              onClick={handleNextMonth}
-              disabled={isNextDisabled}
-              className={`p-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
-                isNextDisabled 
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : 'hover:bg-gray-50 text-gray-600'
-              }`}
-              aria-label="Próximo mês"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
+    <div className="bg-white shadow-sm border border-gray-200 rounded-lg p-4 mb-6 flex justify-center items-center gap-2">
+      <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Mês anterior">
+        <ChevronLeftIcon className="size-4" />
+      </Button>
 
-          {/* Month Selector */}
-          <div className="flex items-center space-x-2">
-            <label htmlFor="month-select" className="text-sm font-medium text-gray-700">
-              Mês:
-            </label>
-            <select
-              id="month-select"
-              value={selectedMonth}
-              onChange={(e) => onMonthChange(parseInt(e.target.value), selectedYear)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {MONTHS.map((month, index) => (
-                <option key={index + 1} value={index + 1}>
-                  {month}
-                </option>
-              ))}
-            </select>
-          </div>
+      <Calendar
+        mode="single"
+        selected={selectedDate}
+        month={selectedDate}
+        onMonthChange={handleMonthChange}
+        disabled={{ after: currentDate }}
+        captionLayout="dropdown"
+        startMonth={new Date(currentDate.getFullYear() - 2, 0)}
+        endMonth={currentDate}
+        classNames={{
+          nav: "hidden",
+          month_grid: "hidden",
+          weekdays: "hidden",
+        }}
+      />
 
-          {/* Year Selector */}
-          <div className="flex items-center space-x-2">
-            <label htmlFor="year-select" className="text-sm font-medium text-gray-700">
-              Ano:
-            </label>
-            <select
-              id="year-select"
-              value={selectedYear}
-              onChange={(e) => onMonthChange(selectedMonth, parseInt(e.target.value))}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {yearOptions.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Current Selection Display */}
-          <div className="bg-blue-50 border border-blue-200 rounded-md px-4 py-2">
-            <span className="text-sm font-medium text-blue-800">
-              {MONTHS[selectedMonth - 1]} {selectedYear}
-            </span>
-          </div>
-        </div>
-      </div>
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={handleNext}
+        disabled={isNextDisabled}
+        aria-label="Próximo mês"
+      >
+        <ChevronRightIcon className="size-4" />
+      </Button>
     </div>
   );
 }
